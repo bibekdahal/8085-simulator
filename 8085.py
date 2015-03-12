@@ -71,8 +71,17 @@ def main():
 
 
 
-
+from Parser import Parser
 try:
-    main()
+    #main()
+    filep = open("test1.asm", "r")
+    asm = filep.read()
+    filep.close()
+    parser = Parser()
+    parser.Lex(asm)
+    parser.Parse()
+    for byte in parser.bytes:
+        print(hex(byte))
+ 
 except (KeyboardInterrupt, SystemExit):
     print("")

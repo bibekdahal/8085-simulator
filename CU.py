@@ -10,6 +10,7 @@ push_map = { 0xC5:'B', 0xD5:'D', 0xE5:'H', 0xF5:'A' }
 pop_map = { 0xC1:'B', 0xD1:'D', 0xE1:'H', 0xF1:'A' }
 mov_map = { 0x78:'A', 0x40:'B', 0x48:'C', 0x50:'D', 0x58:'E', 0x60:'H', 0x68:'L', 0x70:'M' }
 rst_map = [ 0xC7, 0xCF, 0xD7, 0xDF, 0xE7, 0xEF, 0xF7, 0xFF ]
+cnd_map = { 0xC2:'NZ', 0xCA:'Z', 0xD2:'NC', 0xDA:'C', 0xE2:'PO', 0xF2:'P', 0xFA:'M' }
 
 aux_word = 0
 def CheckOffset(byte, base):
@@ -216,7 +217,45 @@ class CU:
         adH = self.Fetch()
         addr = (adH << 8) | adL
         self.SetPC(addr)
-            
+
+    def Cnd(self, cnd):
+        if cnd == 'NZ':
+            return not self.alu.GetZero()
+        elif cnd =='Z':
+            return self.alu.GetZero()
+        elif cnd =='NC':
+            return not self.alu.GetCarry()
+        elif cnd =='C':
+            return self.alu.GetCarry()
+        elif cnd == 'PO':
+            return not self.alu.GetParity()
+        elif cnd == 'PE':
+            return self.alu.GetParity()
+        elif cnd == 'P':
+            return not self.alu.GetSign()
+        elif cnd == 'M':
+            return self.alu.GetSign()
+        return False
+
+    def JmpCnd(self):
+        if not self.Cnd(cnd_map[self.opcode]):
+            return
+        self.Jmp()
+
+    def Call(self):
+        self.PushBytes((self.GetPC() & 0xFF00) >> 8, self.GetPC() & 0x00FF)
+        self.Jmp()
+
+    def CallCnd(self):
+        if not self.Cnd(cnd_map[self.opcode - 2]):
+            return
+        self.Call()
+
+    def RetCnd(self):
+        if not self.Cnd(cnd_map[self.opcode + 2]):
+            return
+        self.Ret()
+
     def SingleStep(self):
         self.FetchAndDecode()
         self.ProcessInterrupts()
@@ -278,10 +317,19 @@ class CU:
             self.Sim()
         elif byte == 0xC9:
             self.Ret()
+        elif (byte+2) in cnd_map:
+            self.RetCnd()
         elif byte == 0xC3:
             self.Jmp()
+        elif byte in cnd_map:
+            self.JmpCnd()
+        elif byte == 0xCD:
+            self.Call()
+        elif (byte-2) in cnd_map:
+            self.CallCnd()
         elif byte in rst_map:
             self.Rst(rst_map.index(byte) * 8)
+
         else:
             raise Exception("Invalid opcode: " + hex(byte))
 

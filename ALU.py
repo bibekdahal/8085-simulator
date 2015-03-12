@@ -33,7 +33,21 @@ class ALU:
             self.registers['F'] |= 0x04
         else:
             self.registers['F'] &= ~0x04
+    
+    def GetCarry(self):
+        return self.registers['F'] & 0x01 == 0x01
 
+    def GetAuxCarry(self):
+        return self.registers['F'] & 0x08 == 0x08
+
+    def GetZero(self):
+        return self.registers['F'] & 0x40 == 0x40
+
+    def GetSign(self):
+        return self.registers['F'] & 0x80 == 0x80
+
+    def GetParity(self):
+        return self.registers['F'] & 0x04 == 0x04
 
 
     def CheckForCarry(self):
