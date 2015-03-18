@@ -4,6 +4,5 @@ mvi a,  20
 ;world
 lxi h, 3322
 
-label1:
-anA H
-Rnz
+label1: anA H
+label1: Rnz

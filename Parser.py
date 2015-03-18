@@ -49,6 +49,12 @@ class Parser:
             if len(tokens) >= 2 and tokens[1] == ':':
                 lastLabel = tokens[0]
                 tokens = tokens[2:]
+                for x in self.asm:
+                    if lastLabel == x["label"]:
+                        lastLabel = ""
+                        print("Error: duplicate label name at lines:\n\t"+line+"\n\t"+x["line"]) 
+                        break
+
             if len(tokens) == 0:
                 continue
             s["opcode"] = tokens[0].upper()
