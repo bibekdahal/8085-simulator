@@ -70,18 +70,21 @@ def main():
 
 
 
-
-from Parser import Parser
+from Assembler import Assembler
 try:
-    main()
-    #filep = open("test1.asm", "r")
-    #asm = filep.read()
-    #filep.close()
-    #parser = Parser()
-    #parser.Lex(asm)
-    #parser.Parse()
-    #for byte in parser.bytes:
-    #    print(hex(byte))
- 
+    #main()
+    filep = open("random.asm", "r")
+    asm = filep.read()
+    filep.close()
+    parser = Assembler()
+    parser.Lex(asm)
+    parser.Parse()
+
+    filep = open("random.bin", "w")
+    for byte in parser.bytes:
+        print(hex(byte) + " ")
+        filep.write('{0:02x}'.format(byte) + "\n")
+    filep.close()
+
 except (KeyboardInterrupt, SystemExit):
     print("")

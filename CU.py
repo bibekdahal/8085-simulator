@@ -218,6 +218,18 @@ class CU:
         addr = (adH << 8) | adL
         self.SetPC(addr)
 
+    def Lda(self):
+        adL = self.Fetch()
+        adH = self.Fetch()
+        addr = (adH << 8) | adL
+        self.alu.registers['A'] = self.bus.ReadMemory(addr)
+
+    def Sta(self):
+        adL = self.Fetch()
+        adH = self.Fetch()
+        addr = (adH << 8) | adL
+        self.bus.WriteMemory(addr, self.alu.regOffset['A'])
+
     def Cnd(self, cnd):
         if cnd == 'NZ':
             return not self.alu.GetZero()
@@ -317,6 +329,10 @@ class CU:
             self.Sim()
         elif byte == 0xC9:
             self.Ret()
+        elif byte == 0x3A:
+            self.Lda()
+        elif byte == 0x32:
+            self.Sta()
         elif (byte+2) in cnd_map:
             self.RetCnd()
         elif byte == 0xC3:

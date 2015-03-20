@@ -17,15 +17,25 @@ ins_len2 = [ 'MVI', 'ADI', 'ACI', 'SUI', 'SBI', 'ANI', 'XRI', 'ORI', 'CPI',
 
 ins_len3 = [ 'LXI', 'JMP', 'JNZ', 'JZ', 'JNC', 'JC', 'JPO', 'JPE', 'JP', 'JM',
                     'CALL', 'CNZ', 'CZ', 'CNC', 'CC', 'CPO', 'CPE', 'CP', 'CM',
-                    'LHLD', 'LDA', 'STA', 'SHLD' ]
+                    'LHLD', 'LDA', 'STA', 'SHLD', 'LDA', 'STA' ]
 
 imm_opcodes = { 'ADI':0xC6, 'ACI':0xCE, 'SUI':0xD6, 'SBI':0xDE, 'ANI':0xE6, 'XRI':0xEE, 'ORI':0xF6, 'CPI':0xFE }
 immword_opcodes = { 'JMP':0xC3, 'CALL':0xCD }
 
+addr_opcodes = { 'LDA': 0x3A, 'STA':0x32, 'JMP':0xC3, 'CALL':0xCD }
+
 singlebytereg_opcodes = { 'ADD':0x80, 'ADC':0x88, 'SUB':0x90, 'SBB':0x98, 'ANA':0xA0, 'XRA':0xA8, 'ORA':0xB0, 'CMP':0xB8 } 
 singlebyte_opcodes = { 'RET':0xC9 }
 
-class Parser:
+
+def is_hex(s):
+    try:
+        int(s, 16)
+        return True
+    except ValueError:
+        return False
+
+class Assembler:
     
     def __init__(self):
         self.asm = []
@@ -45,7 +55,8 @@ class Parser:
         for asm in asms:
             line = re.sub(re.compile(";.*$"), "", asm)
             s = {}
-            tokens = re.findall("\s*(\d+|\w+|.)", line)
+            tokens = re.findall("\s*(\w+|.)", line)
+            tokens = [ t for t in tokens if t.strip() ]
             if len(tokens) >= 2 and tokens[1] == ':':
                 lastLabel = tokens[0]
                 tokens = tokens[2:]
@@ -54,7 +65,6 @@ class Parser:
                         lastLabel = ""
                         print("Error: duplicate label name at lines:\n\t"+line+"\n\t"+x["line"]) 
                         break
-
             if len(tokens) == 0:
                 continue
             s["opcode"] = tokens[0].upper()
@@ -62,16 +72,30 @@ class Parser:
             s["op2"] = None
             s["line"] = line
             s["label"] = ""
-            if len(tokens) > 1:
+            s["type"] = "ASM"
+            if (is_hex(s["opcode"])):
+                s["type"] = "HEX"
+                s["data"] = []
+                for t in tokens:
+                    s["data"].append(int(t,16))
+            elif len(tokens) > 1:
                 s["op1"] = tokens[1].upper()
                 if len(tokens) > 2:
                     if len(tokens) < 4 or tokens[2] != ",":
                         print("Error: expected operand separated by comma\n\t"+line)
                         return False
                     s["op2"] = tokens[3].upper()
-                s["label"] = lastLabel
-                lastLabel = ""
+            s["label"] = lastLabel
+            lastLabel = ""
             self.asm.append(s)
+        if lastLabel != "":
+            s = {}
+            s["data"] = [ 0 ]
+            s["opcode"] = "00"
+            s["type"] = "HEX"
+            s["label"] = lastLabel
+            self.asm.append(s)
+
         return True
     
     def AddByte(self, byte):
@@ -86,16 +110,19 @@ class Parser:
         self.AddByte((num >> 8) & 0xFF)
 
     def ErrorFirstOperand(self):
-        print("Invalid first operand for " + self.opcode + ": " + self.op1 + "\n\t"+self.line)
+        raise Exception("Invalid first operand for " + self.opcode + ": " + self.op1 + "\n\t"+self.line)
 
     def ErrorSecondOperand(self):
-        print("Invalid second operand for " + self.opcode + ": " + self.op2 + "\n\t"+self.line)
+        raise Exception("Invalid second operand for " + self.opcode + ": " + self.op2 + "\n\t"+self.line)
 
     def ErrorUnexpectedFirstOperand(self):
-        print("Unexpected first operand for " + self.opcode + ": " + self.op1 + "\n\t"+self.line)
+        raise Exception("Unexpected first operand for " + self.opcode + ": " + self.op1 + "\n\t"+self.line)
 
     def ErrorUnexpectedSecondOperand(self):
-        print("Unexpected second operand for " + self.opcode + ": " + self.op2 + "\n\t"+self.line)
+        raise Exception("Unexpected second operand for " + self.opcode + ": " + self.op2 + "\n\t"+self.line)
+
+    def ErrorInvalidLabel(self):
+        raise Exception("Invalid label for " + self.opcode + ": " + self.op1 + "\n\t" + self.line)
 
     def Mov(self):
         if not self.op1 in mov_map:
@@ -163,9 +190,14 @@ class Parser:
         elif not operand and not self.op1 is None:
             self.ErrorUnexpectedFirstOperand()
             return
-        self.AddByte(cnd_map[cnd]+offset)
-        if operand:
-            self.AddHexWord(self.op1)
+        self.AddressInstruction(cnd_map[cnd]+offset)
+
+    def AddressInstruction(self, opcode):
+        self.AddByte(opcode)
+        if self.op1 not in self.labels:
+            self.ErrorInvalidLabel()
+            return
+        self.AddHexWord(hex(self.labels[self.op1]))
 
     def CollectLabels(self, addr_base):
         addr = addr_base
@@ -179,30 +211,39 @@ class Parser:
     def Parse(self, addr_base=0x8000):
         self.CollectLabels(addr_base)
         for s in self.asm:
-            oc = s["opcode"]
-            self.opcode = oc
-            self.op1 = s["op1"]
-            self.op2 = s["op2"]
-            self.line = s["line"]
-            if oc == "MVI":
-                self.Mvi()
-            elif oc == "LXI":
-                self.Lxi()
-            elif oc == "MOV":
-                self.Mov()
-            elif oc in imm_opcodes:
-                self.ImmediateInstruction()
-            elif oc in singlebytereg_opcodes:
-                self.SingleByteRegParamInstruction()
-            elif oc in immword_opcodes:
-                self.ImmediateWordInstruction()
-            elif oc in singlebyte_opcodes:
-                self.SingleByteInstruction()
-            elif oc[1:] in cnd_map:
-                if oc[:1] == 'J':
-                    self.Cnd()
-                elif oc[:1] == 'C':
-                    self.Cnd(2)
-                elif oc[:1] == 'R':
-                    self.Cnd(-2, False)
+            if s["type"] == "ASM":
+                oc = s["opcode"]
+                self.opcode = oc
+                self.op1 = s["op1"]
+                self.op2 = s["op2"]
+                self.line = s["line"]
+                if oc == "MVI":
+                    self.Mvi()
+                elif oc == "LXI":
+                    self.Lxi()
+                elif oc == "MOV":
+                    self.Mov()
+                elif oc in addr_opcodes:
+                    self.AddressInstruction(addr_opcodes[oc])
+                elif oc in imm_opcodes:
+                    self.ImmediateInstruction()
+                elif oc in singlebytereg_opcodes:
+                    self.SingleByteRegParamInstruction()
+                elif oc in immword_opcodes:
+                    self.ImmediateWordInstruction()
+                elif oc in singlebyte_opcodes:
+                    self.SingleByteInstruction()
+                elif oc[1:] in cnd_map:
+                    if oc[:1] == 'J':
+                        self.Cnd()
+                    elif oc[:1] == 'C':
+                        self.Cnd(2)
+                    elif oc[:1] == 'R':
+                        self.Cnd(-2, False)
+            else:
+                for t in s["data"]:
+                    while t > 0xFF:
+                        self.AddByte(t&0xFF)
+                        t = t >> 8
+                    self.AddByte(t)
 

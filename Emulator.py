@@ -37,6 +37,7 @@ class State(Enum):
     exam_mem = 1
     exam_reg = 2
     go = 3
+    executing = 4
 
 
 def WriteMemData(addr, data):
@@ -46,7 +47,7 @@ def GetMemData(addr):
 def GetRegData(reg):
     return alu.registers[reg]
 
-reglist = [ 'A', 'B', 'C', 'D', 'E', 'H', 'L', 'F', 'SP', 'PC' ]
+reglist = [ 'A', 'B', 'C', 'D', 'E', 'H', 'L', 'F' ]
 def NextReg(reg):
     return reglist[(reglist.index(reg)+1)%len(reglist)]
 
@@ -179,7 +180,7 @@ class Window(Gtk.Window):
     def on_botton_click(self,widget,data=1):
             input=widget.get_label()
             box = self.entry_addr
-            if self.focus_box == 1:
+            if self.state != State.go and self.focus_box == 1:
                 box = self.entry_hex
             
             if input == "Next" or input == "Prev":
@@ -215,6 +216,28 @@ class Window(Gtk.Window):
                 self.reset()
             elif input == "Exam reg":
                 self.exam_reg()
+            elif input == "Go":
+                self.go()
+
+            elif input == "Single step":
+                global cu
+                if self.executing:
+                    if self.state != State.go:
+                        self.state = State.go
+                        self.entry_hex.set_editable(False)
+                        self.entry_addr.set_text(self.lastAddr)
+                    cu.SetPC(int(self.entry_addr.get_text(), 16))
+                    cu.SingleStep()
+                    self.entry_addr.set_text('{:04x}'.format(cu.GetPC()))
+                    self.change_data()
+            elif input == "Exec":
+                if self.executing:
+                    self.state = State.executing
+                    cu.SetPC(int(self.entry_addr.get_text(), 16))
+                    thread = Thread(target=cu.Run)
+                    thread1 = Thread(target=self.on_executing)
+                    thread.start()
+                    thread1.start()
             else:
                 if self.state == State.none:
                     self.exam_mem()
@@ -228,7 +251,21 @@ class Window(Gtk.Window):
                 else:
                     box.set_text(box.get_text()+input)
     
+    def on_executing(self):
+        laadr = self.entry_addr.get_text()
+        self.entry_addr.set_text("----")
+        self.entry_hex.set_text("--")
+        while cu.running:
+            pass
+        self.reset()
+        self.entry_addr.set_text(laadr)
+        self.change_data()
+
     def exam_mem(self):
+        if self.state == State.executing:
+            return
+        if self.executing:
+            self.lastAddr = self.entry_addr.get_text()
         self.entry_addr.grab_focus()
         self.state = State.exam_mem
         self.entry_addr.set_text("0000")
@@ -236,6 +273,10 @@ class Window(Gtk.Window):
         self.entry_hex.set_editable(True)
 
     def exam_reg(self):
+        if self.state == State.executing:
+            return
+        if self.executing:
+            self.lastAddr = self.entry_addr.get_text()
         self.state = State.exam_reg
         self.entry_addr.set_text("A")
         self.change_data()
@@ -246,17 +287,29 @@ class Window(Gtk.Window):
         self.entry_addr.set_text("-UPS")
         self.entry_hex.set_text("85")
         self.entry_hex.set_editable(False)
+        self.executing = False
+        self.entry_addr.grab_focus()
+        cu.Reset()
+
+    def go(self):
+        if self.state == State.executing:
+            return
+        self.state = State.go
+        self.entry_addr.set_text("0000")
+        self.entry_hex.set_text("00")
+        self.entry_hex.set_editable(False)
+        self.executing = True
 
     def change_data(self):
-        if self.state == State.exam_mem:
-            addr = int(self.entry_addr.get_text(),16)
-            data = '{:02x}'.format(GetMemData(addr))
-            self.entry_hex.set_text(data.upper())
-        elif self.state == State.exam_reg:
+        if self.state == State.exam_reg:
             reg = self.entry_addr.get_text()
             data = '{:02x}'.format(GetRegData(reg))
             self.entry_hex.set_text(data.upper())
-        
+        elif self.state == State.exam_mem or self.executing:
+            addr = int(self.entry_addr.get_text(),16)
+            data = '{:02x}'.format(GetMemData(addr))
+            self.entry_hex.set_text(data.upper())
+
 win=Window()
 win.connect("delete-event",Gtk.main_quit)
 win.show_all()
