@@ -1,10 +1,15 @@
 #!/usr/bin/python3
-from gi.repository import Gtk
+from gi.repository import Gtk, GObject, Gdk, GLib, Pango, Pango
+
 from ALU import ALU
 from CU import CU
 from RAM import RAM
 from Bus import Bus
 from PPI import PPI
+from Assembler import Assembler
+
+from HexEntry import HexEntry
+
 from threading import Thread
 from functools import partial
 import re
@@ -60,19 +65,19 @@ def PrevReg(reg):
 class Window(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self,title="8085 Emulator")
+        self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(10)
         vm_box=Gtk.Box(spacing=10)
         self.add(vm_box)
         
         verh1_box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10)
+        verh2_box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10)
         
         self.entry_addr=Gtk.Entry()
-        self.entry_addr.set_text('')
         self.entry_addr.set_max_length(4)
         self.entry_addr.set_alignment(1)
         
         self.entry_hex=Gtk.Entry()
-        self.entry_hex.set_text('')
         self.entry_hex.set_max_length(2)
         self.entry_hex.set_alignment(1)
 
@@ -135,6 +140,11 @@ class Window(Gtk.Window):
         button_go.connect('clicked',self.on_botton_click)
         button_exe=Gtk.Button(label='Exec')
         button_exe.connect('clicked',self.on_botton_click)              
+
+
+        self.pc_text = Gtk.Label('PC: 0000')
+        self.sp_text = Gtk.Label('SP: FFFF')
+        self.flags_text = Gtk.Label('FLAGS: 00000000')
         
         KeyPadGrid.add(button0)
         KeyPadGrid.attach_next_to(button1,button0,Gtk.PositionType.RIGHT,1,1)
@@ -154,7 +164,12 @@ class Window(Gtk.Window):
         KeyPadGrid.attach_next_to(buttonF,buttonE,Gtk.PositionType.RIGHT,1,1)
         KeyPadGrid.attach_next_to(buttonH,buttonC,Gtk.PositionType.BOTTOM,2,1)
         KeyPadGrid.attach_next_to(buttonL,buttonH,Gtk.PositionType.RIGHT,2,1)
-        KeyPadGrid.attach_next_to(button_prev,buttonH,Gtk.PositionType.BOTTOM,2,1)
+
+        KeyPadGrid.attach_next_to(self.pc_text, buttonH, Gtk.PositionType.BOTTOM, 2, 1)
+        KeyPadGrid.attach_next_to(self.sp_text, self.pc_text, Gtk.PositionType.RIGHT, 2, 1)
+        KeyPadGrid.attach_next_to(self.flags_text, self.pc_text, Gtk.PositionType.BOTTOM, 4, 1)
+
+        KeyPadGrid.attach_next_to(button_prev,self.flags_text,Gtk.PositionType.BOTTOM,2,1)
         KeyPadGrid.attach_next_to(button_next,button_prev,Gtk.PositionType.RIGHT,2,1)       
         KeyPadGrid.attach_next_to(button_reg,button_prev,Gtk.PositionType.BOTTOM,2,1)
         KeyPadGrid.attach_next_to(button_mem,button_reg,Gtk.PositionType.RIGHT,2,1)     
@@ -166,10 +181,82 @@ class Window(Gtk.Window):
         verh1_box.pack_start(self.entry_addr,True,True,0)
         verh1_box.pack_start(self.entry_hex,True,True,0)
         verh1_box.pack_start(KeyPadGrid,True,True,0)
-        vm_box.pack_start(verh1_box,True,True,0)
+        vm_box.pack_start(verh1_box,False,True,0)
+ 
+        strip = Gtk.Box(spacing=10)
+        box1 = Gtk.Box(spacing=10)
+
+        scrolledwindow = Gtk.ScrolledWindow()
+        scrolledwindow.set_hexpand(True)
+        scrolledwindow.set_vexpand(True)
+        self.textEditor = Gtk.TextView()
+        self.textEditor.set_left_margin(20)
+        self.textEditor.override_font(Pango.font_description_from_string("Dejavu Sans Mono 10"))
+        scrolledwindow.add(self.textEditor)
+
+        fileButton = Gtk.Button("Load File")
+        fileButton.connect('clicked', self.file_button)
+
+        loadLbl = Gtk.Label("Load Address: ")
+        self.loadaddr = Gtk.Entry()
+        self.loadaddr.set_max_length(4)
+        self.loadaddr.set_alignment(1)
+        self.loadaddr.set_text('8000')
+
+        scrolledwindow1 = Gtk.ScrolledWindow()
+        scrolledwindow1.set_min_content_width(200)
+        self.lblLabel = Gtk.Label("Labels From The Program")
+        scrolledwindow1.add(self.lblLabel)
+
+        loadButton = Gtk.Button("Load to Memory")
+        loadButton.connect('clicked', self.load_button)
+
+        strip.add(fileButton)
+        strip.add(loadLbl)
+        strip.add(self.loadaddr)
+        strip.add(loadButton)
+
+        box1.pack_start(scrolledwindow, True, True, 0)
+        box1.pack_start(scrolledwindow1, False, True, 0)
+
+        verh2_box.pack_start(box1, True, True, 0)
+        verh2_box.pack_start(strip, False, True, 0)
+        vm_box.pack_start(verh2_box,True,True,0)
+        
+        self.resize(800, 400)
 
         self.focus_box = 0
         self.reset()
+
+    def file_button(self, w):
+        dialog = Gtk.FileChooserDialog("Open File", self, Gtk.FileChooserAction.OPEN, 
+                                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        res = dialog.run()
+        if res == Gtk.ResponseType.OK:
+            fp = open(dialog.get_filename(), 'r')
+            string = fp.read()
+            fp.close()
+            self.textEditor.get_buffer().set_text(string)
+        elif res == Gtk.ResponseType.CANCEL:
+            pass
+        dialog.destroy()
+
+    def load_button(self, w):
+        tb = self.textEditor.get_buffer()
+        string = tb.get_text(tb.get_start_iter(), tb.get_end_iter(), False)
+        asm = Assembler()
+        asm.Lex(string)
+        asm.Parse()
+        addr = int(self.loadaddr.get_text(), 16)
+        i = 0
+        for byte in asm.bytes:
+            ram.Write(addr+i, byte)
+            i += 1
+        
+        strlbl = ""
+        for lbl in asm.labels:
+            strlbl += "\n" + lbl + " : " + hex(asm.labels[lbl])
+        self.lblLabel.set_text(strlbl)
     
     def addr_focus(self, w, e):
         self.focus_box = 0
@@ -235,8 +322,9 @@ class Window(Gtk.Window):
                     self.state = State.executing
                     cu.SetPC(int(self.entry_addr.get_text(), 16))
                     thread = Thread(target=cu.Run)
-                    thread1 = Thread(target=self.on_executing)
                     thread.start()
+                    thread1 = Thread(target=self.on_executing)
+                    thread1.daemon = True
                     thread1.start()
             else:
                 if self.state == State.none:
@@ -252,14 +340,20 @@ class Window(Gtk.Window):
                     box.set_text(box.get_text()+input)
     
     def on_executing(self):
-        laadr = self.entry_addr.get_text()
+        Gdk.threads_enter()
+        self.executing = True
         self.entry_addr.set_text("----")
         self.entry_hex.set_text("--")
+        Gdk.threads_leave()
         while cu.running:
             pass
+        Gdk.threads_enter()
         self.reset()
-        self.entry_addr.set_text(laadr)
+        self.executing = True
+        self.entry_addr.set_text('{:04x}'.format(cu.GetPC()))
         self.change_data()
+        self.executing = False
+        Gdk.threads_leave()
 
     def exam_mem(self):
         if self.state == State.executing:
@@ -289,6 +383,7 @@ class Window(Gtk.Window):
         self.entry_hex.set_editable(False)
         self.executing = False
         self.entry_addr.grab_focus()
+        self.change_data()
         cu.Reset()
 
     def go(self):
@@ -309,7 +404,13 @@ class Window(Gtk.Window):
             addr = int(self.entry_addr.get_text(),16)
             data = '{:02x}'.format(GetMemData(addr))
             self.entry_hex.set_text(data.upper())
+        
+        self.pc_text.set_text('PC: ' + '{:04x}'.format(alu.registers['PC']))
+        self.sp_text.set_text('SP: ' + '{:04x}'.format(alu.registers['SP']))
+        self.flags_text.set_text('FLAGS: ' + '{:08b}'.format(alu.registers['F']))
 
+GObject.threads_init()
+Gdk.threads_init()
 win=Window()
 win.connect("delete-event",Gtk.main_quit)
 win.show_all()
