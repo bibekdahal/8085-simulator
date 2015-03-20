@@ -11,14 +11,27 @@ import re
 import time
 
 def openFile():
-    filep = open("test.asm", "r")
+    filep = open("random.bin", "r")
     global words
     asm = filep.read()
     filep.close()
     asm = re.sub(re.compile(";.*?\n"), "", asm)
     words = bytearray.fromhex("".join(asm.split()))
 
+def execute():
+    try:
+        cu.Run()
+    except Exception as ex:
+        print()
+        print ("Error: ")
+        print ("=======")
+        print(ex)
+        print("\tat address: " + hex(alu.registers['PC']))
+        print()
+        cu.Reset()
+
 def main():
+    global bus, ram, ppi, alu, cu
     bus = Bus()
     ram = RAM(0x0, 64)
     ppi = PPI(0x40)
@@ -47,44 +60,56 @@ def main():
     cu.Reset()
     cu.SetPC(0x8000)
     
-    thread = Thread(target=cu.Run)
+    thread = Thread(target=execute)
     thread.start()
     
-
     ppi.a = 0xbb
     while cu.running:
-        cmd = input("Enter a command: ")
-        if cmd == "quit":
-            cu.running = False
-        elif cmd == "stba":
-            ppi.StrobeA()
-        elif cmd == "stbb":
-            ppi.StrobeB()
-        elif cmd == "show":
-            print("")
-            alu.Show()
-            #print("\n")
-            #ram.Show()
-            print("\n")
-            ppi.Show()
+        pass
+#        cmd = input("Enter a command: ")
+#        if cmd == "quit":
+#            cu.running = False
+#        elif cmd == "stba":
+#            ppi.StrobeA()
+#        elif cmd == "stbb":
+#            ppi.StrobeB()
+#        elif cmd == "show":
+#            print("")
+#            alu.Show()
+#            #print("\n")
+#            #ram.Show()
+#            print("\n")
+#            ppi.Show()
 
+    ram.ShowRange(parser.labels["TABLE"], parser.labels["TABLE"]+0x63)
+    alu.Show()
 
 
 from Assembler import Assembler
+parser = Assembler()
 try:
     #main()
     filep = open("random.asm", "r")
     asm = filep.read()
     filep.close()
-    parser = Assembler()
     parser.Lex(asm)
     parser.Parse()
 
     filep = open("random.bin", "w")
     for byte in parser.bytes:
-        print(hex(byte) + " ")
+        #print(hex(byte) + " ")
         filep.write('{0:02x}'.format(byte) + "\n")
     filep.close()
 
+    main()
+
 except (KeyboardInterrupt, SystemExit):
     print("")
+
+except Exception as ex:
+    print()
+    print ("Error: ")
+    print ("=======")
+    print(ex)
+    print("at line: \n\t" + parser.line + "\nline no.: " + str(parser.line_no))
+    print()

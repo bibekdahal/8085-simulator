@@ -1,3 +1,4 @@
+regPair = { 'H':'L', 'B':'C', 'D':'E', 'A':'F' }
 
 class ALU:
     def __init__(self):
@@ -50,15 +51,15 @@ class ALU:
         return self.registers['F'] & 0x04 == 0x04
 
 
-    def CheckForCarry(self):
-        self.SetCarry(self.registers['A'] > 0xFF)
-        if self.registers['A'] > 0xFF:
-            self.registers['A'] -= 0xFF + 0x01
+    def CheckForCarry(self, reg='A'):
+        self.SetCarry(self.registers[reg] > 0xFF)
+        if self.registers[reg] > 0xFF:
+            self.registers[reg] -= 0xFF + 0x01
     
-    def CheckForBurrow(self):
-        self.SetCarry(self.registers['A'] < 0x00)
-        if self.registers['A'] < 0x00:
-            self.registers['A'] += 0xFF + 0x1
+    def CheckForBurrow(self, reg='A'):
+        self.SetCarry(self.registers[reg] < 0x00)
+        if self.registers[reg] < 0x00:
+            self.registers[reg] += 0xFF + 0x1
 
     def CheckForZero(self, val=0xFFFFFFF):
         if val == 0xFFFFFFF:
@@ -84,7 +85,26 @@ class ALU:
         self.CheckForZero(val)
         self.CheckForSign(val)
         self.CheckForParity(val)
+    
+    def Inr(self, reg):
+        self.registers[reg] += 1
+        self.CheckForCarry(reg)
+        self.CheckAll(self.registers[reg])
 
+    def Inx(self, reg):
+        reg2 = regPair[reg]
+        if self.registers[reg2] == 0xFF:
+            self.registers[reg2] = 0
+            if self.registers[reg] == 0xFF:
+                self.registers[reg] = 0
+                self.SetCarry()
+            else:
+                self.registers[reg] += 1
+                self.SetCarry(False)
+        else:
+            self.registers[reg2] += 1
+            self.SetCarry(False)
+        self.CheckAll((self.registers[reg]<<8) | self.registers[reg2])           
 
     def Add(self, val, carry=False):
         res = self.registers['A'] + val
@@ -94,7 +114,27 @@ class ALU:
         self.registers['A'] = res
         self.CheckForCarry()
         self.CheckAll()
-                
+     
+    def Dcr(self, reg):
+        self.registers[reg] -= 1
+        self.CheckForBurrow(reg)
+        self.CheckAll(self.registers[reg])           
+
+    def Dcx(self, reg):
+        reg2 = regPair[reg]
+        if self.registers[reg2] == 0:
+            self.registers[reg2] = 0xFF
+            if self.registers[reg] == 0:
+                self.registers[reg] = 0xFF
+                self.SetCarry()
+            else:
+                self.registers[reg] -= 1
+                self.SetCarry(False)
+        else:
+            self.registers[reg2] -= 1
+            self.SetCarry(False)
+        self.CheckAll((self.registers[reg]<<8) | self.registers[reg2])           
+
     def Sub(self, val, burrow=False):
         res = self.registers['A'] - val
         if (burrow):
@@ -102,6 +142,7 @@ class ALU:
             res -= c
         self.registers['A'] = res
         self.CheckForBurrow()
+        self.CheckAll()
 
     def And(self, val):
         self.registers['A'] &= val
@@ -121,7 +162,7 @@ class ALU:
 
     def Compare(self, val):
         temp = self.registers['A']
-        self.Subtract(val)
+        self.Sub(val)
         self.registers['A'] = temp
 
     def DecimalAdjust(self):
@@ -141,7 +182,48 @@ class ALU:
             self.registers['H'] -= 0xFF + 0x01
         self.CheckAll(self.GetHL())
 
+    def Rlc(self):
+        a = self.registers['A']
+        bit = a & 0x80
+        a <<= 1
+        if bit != 0:
+            a |= 1
+            self.SetCarry()
+        a &= 0xFF
+        self.registers['A'] = a
 
+    def Rrc(self):
+        a = self.registers['A']
+        bit = a & 0x01
+        a >>= 1
+        if bit != 0:
+            a |= 0x80
+            self.SetCarry()
+        a &= 0xFF
+        self.registers['A'] = a
+    
+    def Ral(self):
+        a = self.registers['A']
+        bit = a & 0x80
+        a <<= 1
+        if self.GetCarry():
+            a |= 1;
+        if bit != 0:
+            self.SetCarry()
+        a &= 0xFF
+        self.registers['A'] = a
+
+    def Rar(self):
+        a = self.registers['A']
+        bit = a & 0x01
+        a >>= 1
+        if self.GetCarry():
+            a |= 0x80
+        if bit != 0:
+            self.SetCarry()
+        a &= 0xFF
+        self.registers['A'] = a
+    
     def GetBC(self):
         return (self.registers['B'] << 8) | self.registers['C']
 

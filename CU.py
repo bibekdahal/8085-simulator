@@ -70,7 +70,8 @@ class CU:
         self.SetPC(pc+1)
         byte = self.bus.ReadMemory(pc)
         if byte > 0xFF:
-            raise Exception("Invalid byte at " + hex(pc) + " : " + str(byte))
+            self.SetPC(pc)
+            raise Exception("Invalid byte at: " + hex(byte))
         return byte
 
     def ProcessInterrupts(self):
@@ -101,6 +102,22 @@ class CU:
         reg = mvi_map[self.opcode]
         byte = self.Fetch()
         self.SetData(reg, byte)
+
+    def Inr(self):
+        reg = mvi_map[self.opcode+2]
+        self.alu.Inr(reg)
+
+    def Inx(self):
+        reg = lxi_map[self.opcode-2]
+        self.alu.Inx(reg)
+
+    def Dcr(self):
+        reg = mvi_map[self.opcode+1]
+        self.alu.Dcr(reg)
+
+    def Dcx(self):
+        reg = lxi_map[self.opcode-0xA]
+        self.alu.Dcx(reg)
 
     def Lxi(self):
         byteL = self.Fetch()
@@ -159,6 +176,14 @@ class CU:
     def Ora(self):
         sreg = regOffset[self.opcode-aux_word]
         self.alu.Or(self.GetData(sreg))
+    
+    def Cmp(self):
+        sreg = regOffset[self.opcode-aux_word]
+        self.alu.Compare(self.GetData(sreg))
+
+    def Cpi(self):
+        byte = self.Fetch()
+        self.alu.Compare(byte)
 
     def Out(self):
         byte = self.Fetch()
@@ -228,7 +253,7 @@ class CU:
         adL = self.Fetch()
         adH = self.Fetch()
         addr = (adH << 8) | adL
-        self.bus.WriteMemory(addr, self.alu.regOffset['A'])
+        self.bus.WriteMemory(addr, self.alu.registers['A'])
 
     def Cnd(self, cnd):
         if cnd == 'NZ':
@@ -251,15 +276,21 @@ class CU:
 
     def JmpCnd(self):
         if not self.Cnd(cnd_map[self.opcode]):
+            self.Fetch()
+            self.Fetch()
             return
         self.Jmp()
 
     def Call(self):
-        self.PushBytes((self.GetPC() & 0xFF00) >> 8, self.GetPC() & 0x00FF)
+        pc = self.GetPC() + 2
+        self.PushBytes((pc & 0xFF00) >> 8, pc & 0x00FF)
         self.Jmp()
+
 
     def CallCnd(self):
         if not self.Cnd(cnd_map[self.opcode - 2]):
+            self.Fetch()
+            self.Fetch()
             return
         self.Call()
 
@@ -281,6 +312,14 @@ class CU:
             self.running = False
         elif byte in mvi_map:
             self.Mvi()
+        elif byte+2 in mvi_map:
+            self.Inr()
+        elif byte+1 in mvi_map:
+            self.Dcr()
+        elif byte-2 in lxi_map:
+            self.Inx()
+        elif byte-0xA in lxi_map:
+            self.Dcx()
         elif byte in lxi_map:
             self.Lxi()
         elif byte in push_map:
@@ -311,12 +350,16 @@ class CU:
             self.Ana()
         elif byte == 0xF6:
             self.Ori()
-        elif CheckOffset(byte, 0xB3):
+        elif CheckOffset(byte, 0xB0):
             self.Ora()
         elif byte == 0xEE:
             self.Xri()
         elif CheckOffset(byte, 0xA8):
             self.Xra()
+        elif byte == 0xFE:
+            self.Cpi()
+        elif CheckOffset(byte, 0xB8):
+            self.Cmp()
         elif byte == 0xDB:
             self.In()
         elif byte == 0xD3:
@@ -333,6 +376,14 @@ class CU:
             self.Lda()
         elif byte == 0x32:
             self.Sta()
+        elif byte == 0x07:
+            self.alu.Rlc()
+        elif byte == 0x0F:
+            self.alu.Rrc()
+        elif byte == 0x17:
+            self.alu.Ral()
+        elif byte == 0x1F:
+            self.alu.Rar()
         elif (byte+2) in cnd_map:
             self.RetCnd()
         elif byte == 0xC3:

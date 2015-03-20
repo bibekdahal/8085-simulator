@@ -18,3 +18,9 @@ class RAM:
                 print(hex(addr)+": "+hex(i))
             addr+=1
 
+    def ShowRange(self, start, end):
+        addr = start
+        while addr <= end:
+            print(hex(addr)+": "+hex(self.Read(addr)))
+            addr+=1
+

@@ -1,0 +1,9 @@
+
+
+MVI a, 0x7f
+mvi b, 0xb
+CMP B
+JM L1
+MVI D, 0xb1
+l1:
+hlt
