@@ -54,6 +54,7 @@ def execute():
     try:
         cu.Run()
     except Exception as ex:
+        win.Clear()
         print()
         print ("Error: ")
         print ("=======")
@@ -431,33 +432,34 @@ class Window(Gtk.Window):
                 box = self.entry_hex
             
             if input == "Next" or input == "Prev":
-                if self.state == State.exam_mem:
-                    if self.focus_box == 1:
-                        addr = int(self.entry_addr.get_text(),16)
-                        offset = 0
-                        if input == "Next":
-                            WriteMemData(addr, int(self.entry_hex.get_text(),16))
-                            offset = 1
-                        else:
-                            WriteMemData(addr, int(self.entry_hex.get_text(),16))
-                            if addr != 0:
-                                offset = -1
+                if not cu.running:
+                    if self.state == State.exam_mem:
+                        if self.focus_box == 1:
+                            addr = int(self.entry_addr.get_text(),16)
+                            offset = 0
+                            if input == "Next":
+                                WriteMemData(addr, int(self.entry_hex.get_text(),16))
+                                offset = 1
+                            else:
+                                WriteMemData(addr, int(self.entry_hex.get_text(),16))
+                                if addr != 0:
+                                    offset = -1
 
-                        newaddr = '{:04x}'.format(addr+offset)
-                        self.entry_addr.set_text(newaddr)
-                        self.change_data()
-                    self.entry_hex.grab_focus()
-                elif self.state == State.exam_reg:
-                    curreg = self.entry_addr.get_text()
-                    if input == "Next":
-                        reg = NextReg(curreg)
-                    else:
-                        reg = PrevReg(curreg)
-                    self.entry_addr.set_text(reg)
-                elif self.singleStepping and input=="Next":
-                    self.SingleStep()
-                    
-                self.change_data()
+                            newaddr = '{:04x}'.format(addr+offset)
+                            self.entry_addr.set_text(newaddr)
+                            self.change_data()
+                        self.entry_hex.grab_focus()
+                    elif self.state == State.exam_reg:
+                        curreg = self.entry_addr.get_text()
+                        if input == "Next":
+                            reg = NextReg(curreg)
+                        else:
+                            reg = PrevReg(curreg)
+                        self.entry_addr.set_text(reg)
+                    elif self.singleStepping and input=="Next":
+                        self.SingleStep()
+                        
+                    self.change_data()
 
 
             elif input == "Exam mem":
@@ -473,7 +475,7 @@ class Window(Gtk.Window):
                 self.SingleStep()
                 
             elif input == "Exec":
-                if self.executing:
+                if self.executing and not cu.running:
                     self.state = State.executing
                     cu.SetPC(int(self.entry_addr.get_text(), 16))
                     thread = Thread(target=execute)
@@ -496,6 +498,8 @@ class Window(Gtk.Window):
 
     def SingleStep(self):
         global cu
+        if cu.running:
+            return
         if self.executing:
             if self.state != State.go:
                 self.state = State.go
@@ -512,7 +516,6 @@ class Window(Gtk.Window):
     
     def on_executing(self):
         Gdk.threads_enter()
-        self.executing = True
         self.entry_addr.set_text("----")
         self.entry_hex.set_text("--")
         self.pc_text.set_text("PC: ---- ")
@@ -560,6 +563,7 @@ class Window(Gtk.Window):
         self.executing = False
         self.entry_addr.grab_focus()
         self.change_data()
+        self.singleStepping = False
         cu.Reset()
 
     def go(self):
