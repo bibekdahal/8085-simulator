@@ -23,7 +23,8 @@ imm_opcodes = { 'ADI':0xC6, 'ACI':0xCE, 'SUI':0xD6, 'SBI':0xDE, 'ANI':0xE6, 'XRI
 addr_opcodes = { 'LDA': 0x3A, 'STA':0x32, 'JMP':0xC3, 'CALL':0xCD }
 
 singlebytereg_opcodes = { 'ADD':0x80, 'ADC':0x88, 'SUB':0x90, 'SBB':0x98, 'ANA':0xA0, 'XRA':0xA8, 'ORA':0xB0, 'CMP':0xB8 } 
-singlebyte_opcodes = { 'RET':0xC9, 'HLT':0x76, 'RLC':0x07, 'RRC':0x0F, 'RAL':0x17, 'RAR':0x1F }
+singlebyte_opcodes = { 'RET':0xC9, 'HLT':0x76, 'RLC':0x07, 'RRC':0x0F, 'RAL':0x17, 'RAR':0x1F, 'CMA':0x2E, 'DDA':0x27, 'CMC':0x3F,
+                        'STC':0x37, 'EI':0xFB, 'DI':0xFB, 'NOP':0x00, 'XTHL':0xE3, 'SPHL':0xF9, 'SIM':0x30, 'RIM':0x20, 'XCHG':0xEB }
 
 
 def is_hex(s):
@@ -159,7 +160,7 @@ class Assembler:
         if not self.op1 in mvi_map:
             self.ErrorFirstOperand()
             return
-        if not self.op2 is None:
+        if self.op2:
             self.ErrorUnexpectedSecondOperand()
             return
         self.AddByte(mvi_map[self.op1]+offset)
@@ -168,7 +169,7 @@ class Assembler:
         if not self.op1 in lxi_map:
             self.ErrorFirstOperand()
             return
-        if not self.op2 is None:
+        if self.op2:
             self.ErrorUnexpectedSecondOperand()
             return
         self.AddByte(lxi_map[self.op1]+offset)
@@ -177,7 +178,7 @@ class Assembler:
         if not self.op1 in push_map:
             self.ErrorFirstOperand()
             return
-        if not self.op2 is None:
+        if self.op2:
             self.ErrorUnexpectedSecondOperand()
             return
         self.AddByte(push_map[self.op1])
@@ -186,11 +187,17 @@ class Assembler:
         if not self.op1 in pop_map:
             self.ErrorFirstOperand()
             return
-        if not self.op2 is None:
+        if self.op2:
             self.ErrorUnexpectedSecondOperand()
             return
         self.AddByte(pop_map[self.op1])
-
+    
+    def Rst(self):
+        if self.op1 is None or not is_hex(self.op1) or int(self.op1) > 7:
+            self.ErrorFirstOperand()
+        if self.op2:
+           self.ErrorUnexpectedSecondOperand()
+        self.AddByte(rst_map[int(self.op1)])
 
     def Lxi(self):
         if not self.op1 in lxi_map:
@@ -284,6 +291,8 @@ class Assembler:
                     self.Push()
                 elif oc == "POP":
                     self.Pop()
+                elif oc == "RST":
+                    self.Rst()
                 elif oc in addr_opcodes:
                     self.AddressInstruction(addr_opcodes[oc])
                 elif oc in imm_opcodes:

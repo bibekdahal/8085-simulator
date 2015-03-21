@@ -273,11 +273,14 @@ class Window(Gtk.Window):
 
         loadButton = Gtk.Button("Load to Memory")
         loadButton.connect('clicked', self.load_button)
+        runButton = Gtk.Button("Load and Run")
+        runButton.connect('clicked', self.run_button)
 
         strip.add(fileButton)
         strip.add(loadLbl)
         strip.add(self.loadaddr)
         strip.add(loadButton)
+        strip.add(runButton)
 
         box1.pack_start(scrolledwindow, True, True, 0)
         box1.pack_start(noticeBox, False, True, 0)
@@ -333,9 +336,12 @@ class Window(Gtk.Window):
         self.resize(1000, 400)
 
         self.focus_box = 0
+        self.state = State.none
         self.reset()
 
         self.ppis = []
+
+        self.textEditor.grab_focus()
 
         sys.stdout = Logger(self.notifier)
 
@@ -370,6 +376,11 @@ class Window(Gtk.Window):
 
     def remove_ppi(self, w, e):
         self.ppis.remove(self.get_ppi(w))
+    
+    def run_button(self, w):
+        self.load_button(None)
+        self.go()
+        self.exec()
 
     def load_button(self, w):
         tb = self.textEditor.get_buffer()
@@ -483,14 +494,7 @@ class Window(Gtk.Window):
                 self.SingleStep()
                 
             elif input == "Exec":
-                if self.executing and not cu.running:
-                    self.state = State.executing
-                    cu.SetPC(int(self.entry_addr.get_text(), 16))
-                    thread = Thread(target=execute)
-                    thread.start()
-                    thread1 = Thread(target=self.on_executing)
-                    thread1.daemon = True
-                    thread1.start()
+                self.exec()
             else:
                 if self.state == State.none:
                     self.exam_mem()
@@ -503,6 +507,16 @@ class Window(Gtk.Window):
                     box.set_text(box.get_text()[1:4]+input)
                 else:
                     box.set_text(box.get_text()+input)
+    
+    def exec(self):
+       if self.executing and not cu.running:
+           self.state = State.executing
+           cu.SetPC(int(self.entry_addr.get_text(), 16))
+           thread = Thread(target=execute)
+           thread.start()
+           thread1 = Thread(target=self.on_executing)
+           thread1.daemon = True
+           thread1.start()
 
     def SingleStep(self):
         global cu
@@ -533,7 +547,7 @@ class Window(Gtk.Window):
         while cu.running:
             pass
         Gdk.threads_enter()
-        self.reset()
+        self.reset(False)
         self.executing = True
         self.entry_addr.set_text('{:04x}'.format(cu.GetPC()))
         self.change_data()
@@ -563,16 +577,19 @@ class Window(Gtk.Window):
         self.change_data()
         self.entry_hex.set_editable(False)
 
-    def reset(self):
-        self.state = State.none
+    def reset(self, resetAlu=True):
         self.entry_addr.set_text("-UPS")
         self.entry_hex.set_text("85")
         self.entry_hex.set_editable(False)
         self.executing = False
         self.entry_addr.grab_focus()
-        self.change_data()
-        self.singleStepping = False
         cu.Reset()
+        time.sleep(0.02)
+        if resetAlu and not self.state == State.executing:
+            alu.Reset()
+        self.change_data()
+        self.state = State.none
+        self.singleStepping = False
 
     def go(self):
         if self.state == State.executing:

@@ -5,6 +5,10 @@ class ALU:
         self.registers = { 'A':0, 'B':0, 'C':0, 'D':0, 'E':0, 'H':0, 'L':0, 'F':0, 'PC':0, 'SP':0xFF }
         self.CheckAll()
 
+    def Reset(self):
+        self.registers = { 'A':0, 'B':0, 'C':0, 'D':0, 'E':0, 'H':0, 'L':0, 'F':0, 'PC':0, 'SP':0xFF }
+        self.CheckAll()
+
     def SetCarry(self, toSet=True):
         if toSet:
             self.registers['F'] |= 0x01
