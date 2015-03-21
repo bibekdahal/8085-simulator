@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+<language _name="Assembler" version="1.0" _section="Sources" globs="*.asm" mimetypes="text/x-asm;text/x-assembler">
+	
+	<line-comment _name = "Line Comment" style= "Comment">
+		<start-regex>#|@|;</start-regex>
+	</line-comment>
+
+	<pattern-item _name = "Label" style = "Preprocessor">
+		<regex>^[A-Za-z_][A-Za-z_0-9]*\:</regex>
+	</pattern-item>
+   
+   <keyword-list _name = "Registers" style = "Data Type" case-sensitive="FALSE"
+    	match-empty-string-at-beginning = "TRUE"
+    	match-empty-string-at-end = "TRUE">
+        
+    	<keyword>a</keyword>
+    	<keyword>b</keyword>
+    	<keyword>c</keyword>
+    	<keyword>d</keyword>
+    	<keyword>e</keyword>
+    	<keyword>h</keyword>
+    	<keyword>l</keyword>
+    	<keyword>psw</keyword>
+   </keyword-list>
+
+    	
+    <keyword-list _name = "Instructions" style = "Keyword" case-sensitive="FALSE"
+    	match-empty-string-at-beginning = "TRUE"
+    	match-empty-string-at-end = "TRUE">
+    	
+    	<keyword>adc</keyword>
+    	<keyword>add</keyword>
+    	<keyword>and</keyword>
+    	<keyword>call</keyword>
+    	<keyword>cma</keyword>
+    	<keyword>cmp</keyword>
+    	<keyword>daa</keyword>
+    	<keyword>dad</keyword>
+    	<keyword>dcr</keyword>
+    	<keyword>hlt</keyword>
+    	<keyword>in</keyword>
+    	<keyword>inr</keyword>
+    	<keyword>ret</keyword>
+    	<keyword>JMP</keyword>
+    	<keyword>JNC</keyword>
+    	<keyword>JC</keyword>
+    	<keyword>JZ</keyword>
+    	<keyword>JNZ</keyword>
+    	<keyword>JPE</keyword>
+    	<keyword>JPO</keyword>
+    	<keyword>JM</keyword>
+    	<keyword>JP</keyword>
+    	<keyword>CNC</keyword>
+    	<keyword>CC</keyword>
+    	<keyword>CZ</keyword>
+    	<keyword>CNZ</keyword>
+    	<keyword>CPE</keyword>
+    	<keyword>CPO</keyword>
+    	<keyword>CM</keyword>
+    	<keyword>CP</keyword>
+    	<keyword>RNC</keyword>
+    	<keyword>RC</keyword>
+    	<keyword>RZ</keyword>
+    	<keyword>RNZ</keyword>
+    	<keyword>RPE</keyword>
+    	<keyword>RPO</keyword>
+    	<keyword>RM</keyword>
+    	<keyword>RP</keyword>
+    	<keyword>lxi</keyword>
+    	<keyword>mov</keyword>
+    	<keyword>mvi</keyword>
+    	<keyword>nop</keyword>
+    	<keyword>cpi</keyword>
+    	<keyword>or</keyword>
+    	<keyword>out</keyword>
+    	<keyword>pop</keyword>
+    	<keyword>push</keyword>
+    	<keyword>ret</keyword>
+    	<keyword>sbb</keyword>
+    	<keyword>sub</keyword>
+    	<keyword>xor</keyword>
+
+    	<keyword>ldax</keyword>
+    	<keyword>lhld</keyword>
+    	<keyword>lda</keyword>
+    	<keyword>sta</keyword>
+    	<keyword>stax</keyword>
+    	<keyword>shld</keyword>
+    	<keyword>inx</keyword>
+    	<keyword>dcx</keyword>
+    	<keyword>ana</keyword>
+    	<keyword>xra</keyword>
+    	<keyword>ora</keyword>
+    	<keyword>stc</keyword>
+    	<keyword>cmc</keyword>
+    	<keyword>rlc</keyword>
+    	<keyword>rrc</keyword>
+    	<keyword>ral</keyword>
+    	<keyword>rar</keyword>
+    	<keyword>adi</keyword>
+    	<keyword>aci</keyword>
+    	<keyword>sui</keyword>
+    	<keyword>sbi</keyword>
+    	<keyword>ani</keyword>
+    	<keyword>xri</keyword>
+    	<keyword>ori</keyword>
+    	<keyword>rst</keyword>
+    	<keyword>ei</keyword>
+    	<keyword>di</keyword>
+    	<keyword>sim</keyword>
+    	<keyword>rim</keyword>
+    	<keyword>xthl</keyword>
+    	<keyword>sphl</keyword>
+    	<keyword>xchg</keyword>
+	</keyword-list>
+
+	<pattern-item _name = "Decimal" style = "Decimal">
+		<regex>\b([1-9][0-9]*|0)([Uu]([Ll]|LL|ll)?|([Ll]|LL|ll)[Uu]?)?\b</regex>
+	</pattern-item>
+
+	<pattern-item _name = "Hex Number" style = "Base-N Integer">
+		<regex>\b0[xX][0-9a-fA-F]+([Uu]([Ll]|LL|ll)?|([Ll]|LL|ll)[Uu]?)?\b</regex>
+	</pattern-item>
+
+</language>
+

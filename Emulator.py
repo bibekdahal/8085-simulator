@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from gi.repository import Gtk, GObject, Gdk, GLib, Pango, Pango
+from gi.repository import Gtk, GObject, Gdk, GLib, Pango, Pango, GtkSource
 
 from ALU import ALU
 from CU import CU
@@ -17,7 +17,7 @@ from functools import partial
 import re
 import time
 from enum import Enum
-import sys
+import sys, os
 
 def is_hex(s):
     try:
@@ -228,9 +228,21 @@ class Window(Gtk.Window):
         box1 = Gtk.Box(spacing=10)
 
         scrolledwindow = Gtk.ScrolledWindow()
-        self.textEditor = Gtk.TextView()
+        sbuffer = GtkSource.Buffer()
+        self.textEditor = GtkSource.View.new_with_buffer(sbuffer) #Gtk.TextView()
         self.textEditor.set_left_margin(20)
         self.textEditor.override_font(Pango.font_description_from_string("Dejavu Sans Mono 10"))
+        
+        lman = GtkSource.LanguageManager.get_default()
+        paths = lman.get_search_path()
+        paths.append(os.path.dirname(os.path.abspath(__file__)))
+        lman.set_search_path(paths)
+        sbuffer.set_language(lman.get_language('assembler'))
+
+        sman = GtkSource.StyleSchemeManager.get_default()
+        sbuffer.set_style_scheme(sman.get_scheme('oblivion'))
+
+
         scrolledwindow.add(self.textEditor)
 
         fileButton = Gtk.Button("Load File")
@@ -287,7 +299,7 @@ class Window(Gtk.Window):
 
         ppilbl = Gtk.Label("PPI Base Address: ")
         self.ppiaddr = Gtk.Entry()
-        self.ppiaddr.set_max_length(4)
+        self.ppiaddr.set_max_length(2)
         self.ppiaddr.set_alignment(1)
         self.ppiaddr.set_text('40')
         ppiButton = Gtk.Button("    Add PPI    ")
@@ -326,7 +338,7 @@ class Window(Gtk.Window):
         tableBox.add(self.tablelbl)
         parentBox.pack_start(tableBox, False, True, 0)
         
-        self.resize(800, 400)
+        self.resize(1000, 400)
 
         self.focus_box = 0
         self.reset()
