@@ -26,6 +26,7 @@ singlebytereg_opcodes = { 'ADD':0x80, 'ADC':0x88, 'SUB':0x90, 'SBB':0x98, 'ANA':
 singlebyte_opcodes = { 'RET':0xC9, 'HLT':0x76, 'RLC':0x07, 'RRC':0x0F, 'RAL':0x17, 'RAR':0x1F, 'CMA':0x2E, 'DDA':0x27, 'CMC':0x3F,
                         'STC':0x37, 'EI':0xFB, 'DI':0xFB, 'NOP':0x00, 'XTHL':0xE3, 'SPHL':0xF9, 'SIM':0x30, 'RIM':0x20, 'XCHG':0xEB }
 
+misc_opcodes = [ 'MOV', 'INX', 'DCX', 'INR', 'DCR', 'PUSH', 'POP' ]
 
 def is_hex(s):
     try:
@@ -40,6 +41,19 @@ class Assembler:
         self.asm = []
         self.bytes = []
         self.labels = {}
+
+    def IsIns(self, opcode):
+        if opcode in ins_len2:
+            return True
+        elif opcode in ins_len3:
+            return True
+        elif opcode in singlebytereg_opcodes:
+            return True
+        elif opcode in singlebyte_opcodes:
+            return True
+        elif opcode in misc_opcodes:
+            return True
+        return False
 
     def GetInsLen(self, opcode):
         if opcode in ins_len2:
@@ -62,11 +76,13 @@ class Assembler:
             tokens = [ t for t in tokens if t.strip() ]
             if len(tokens) >= 2 and tokens[1] == ':':
                 lastLabel = tokens[0].upper()
+                if self.IsIns(lastLabel):
+                    raise Exception("Invalid label: "+ lastLabel)
                 tokens = tokens[2:]
                 for x in self.asm:
                     if lastLabel == x["label"]:
                         lastLabel = ""
-                        print("Error: duplicate label name at lines:\n\t"+line+"\n\t"+x["line"]) 
+                        raise Exception("Error: duplicate label name, previously defined at:\n\t"+x["line"]) 
                         break
             if len(tokens) == 0:
                 continue

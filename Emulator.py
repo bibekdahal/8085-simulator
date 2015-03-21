@@ -250,6 +250,7 @@ class Window(Gtk.Window):
         self.notifier = Gtk.Label("")
         self.notifier.set_valign(1)
         self.notifier.set_halign(1)
+        self.notifier.set_line_wrap(True)
         scrolledwindow2.add(self.notifier)
 
         scrolledwindow1 = Gtk.ScrolledWindow()
@@ -378,9 +379,9 @@ class Window(Gtk.Window):
         self.ppis.remove(self.get_ppi(w))
     
     def run_button(self, w):
-        self.load_button(None)
-        self.go()
-        self.exec()
+        if self.load_button(None):
+            self.go()
+            self.exec()
 
     def load_button(self, w):
         tb = self.textEditor.get_buffer()
@@ -404,6 +405,7 @@ class Window(Gtk.Window):
             self.lblLabel.set_text(strlbl)
             self.Clear()
             print("Assembled and loaded succesfully")
+            return True
     
         except Exception as ex:
             self.lblLabel.set_text("")
@@ -412,6 +414,7 @@ class Window(Gtk.Window):
             print ("=======")
             print(ex)
             print("at line: \n\t" + asm.line + "\nline no.: " + str(asm.line_no))
+            return False
            
     def Clear(self):
         sys.stdout.flush()
