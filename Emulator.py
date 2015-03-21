@@ -19,14 +19,6 @@ import time
 from enum import Enum
 import sys, os
 
-def is_hex(s):
-    try:
-        int(s, 16)
-        return True
-    except ValueError:
-        return False
-
-
 bus = Bus()
 ram = RAM(0x0, 64)
 bus.AddMemoryPeripheral(ram, 0x0, 0x0+64*1024-1)
@@ -386,7 +378,10 @@ class Window(Gtk.Window):
         try:
             asm.Lex(string)
             asm.Parse()
-            addr = int(self.loadaddr.get_text(), 16)
+            try:
+                addr = int(self.loadaddr.get_text(), 16)
+            except:
+                addr = 0
             i = 0
             for byte in asm.bytes:
                 ram.Write(addr+i, byte)
@@ -406,6 +401,7 @@ class Window(Gtk.Window):
             print ("=======")
             print(ex)
             print("at line: \n\t" + asm.line + "\nline no.: " + str(asm.line_no))
+           
     def Clear(self):
         sys.stdout.flush()
 
@@ -581,8 +577,12 @@ class Window(Gtk.Window):
     def go(self):
         if self.state == State.executing:
             return
+        try:
+            addr = int(self.loadaddr.get_text(), 16)
+        except:
+            addr = 0
         self.state = State.go
-        self.entry_addr.set_text("0000")
+        self.entry_addr.set_text('{:04x}'.format(addr))
         self.entry_hex.set_text("00")
         self.entry_hex.set_editable(False)
         self.executing = True
@@ -593,7 +593,10 @@ class Window(Gtk.Window):
             data = '{:02x}'.format(GetRegData(reg))
             self.entry_hex.set_text(data.upper())
         elif self.state == State.exam_mem or self.executing:
-            addr = int(self.entry_addr.get_text(),16)
+            try:
+                addr = int(self.entry_addr.get_text(),16)
+            except:
+                addr = 0
             data = '{:02x}'.format(GetMemData(addr))
             self.entry_hex.set_text(data.upper())
         
