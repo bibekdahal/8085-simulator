@@ -102,6 +102,8 @@ class Assembler:
         return True
     
     def AddByte(self, byte):
+        if byte > 0xFF:
+            raise Exception("Expected byte value: " + hex(byte))
         self.bytes.append(byte)
     
     def AddHexByte(self, num):
@@ -110,6 +112,8 @@ class Assembler:
     def AddHexWord(self, word):
         if is_hex(word):
             num = int(word, 16)
+            if num > 0xFFFF:
+                raise Exception("Expected word value: " + hex(num))
             self.AddByte(num & 0xFF)
             self.AddByte((num >> 8) & 0xFF)
         else:
@@ -202,7 +206,7 @@ class Assembler:
         if not self.op1 in regOffset:
             self.ErrorFirstOperand()
             return
-        if not self.op2 is None:
+        if self.op2:
             self.ErrorUnexpectedSecondOperand()
             return
         self.AddByte(singlebytereg_opcodes[self.opcode] + regOffset.index(self.op1))
