@@ -301,6 +301,7 @@ class CU:
 
     def Hlt(self):
         self.SetPC(self.GetPC()-1)
+        self.running = False
 
     def SingleStep(self):
         self.FetchAndDecode()

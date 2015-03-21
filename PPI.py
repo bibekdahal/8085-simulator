@@ -45,6 +45,11 @@ class PPI:
 
 
     def BSR(self):
+        bit = self.cr & 0x0E
+        bit = bit >> 1
+        data = self.cr & 0x01
+        data = data << bit
+        self.c = (self.c & ~data)|data
         self.Change()
 
     def InA(self):

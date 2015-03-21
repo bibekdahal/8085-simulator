@@ -56,7 +56,7 @@ Inner0: MOV A, E            ; while i < n
         MOV A, M
 
         CMP B                   ; if (a[i] < a[imin])
-        JM L456                     ; imin = i
+        JC L456                     ; imin = i
         JZ L456
         MOV D, E
 
@@ -82,13 +82,13 @@ BUBBLE_SORT:
         MVI C, 0x64
 OTR0:   MOV A, C
         CPI 0
-        JM OTR1
+        JC OTR1
         
         MVI E, 0
 INR0:   MOV A, C
         DCR A
         CMP E
-        JM INR1
+        JC INR1
         JZ INR1
 
         MOV D, E
@@ -101,7 +101,7 @@ INR0:   MOV A, C
         CALL GET_MEMORY
         MOV A, M
         CMP B
-        JP L678
+        JNC L678
         CALL SWAP   
 
 L678:
@@ -154,7 +154,6 @@ L098:
         XRA B
         
         STA X
-        ANI 0x7F
         RET
         
 X: 0C
