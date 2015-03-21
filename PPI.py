@@ -9,6 +9,12 @@ class PPI:
         self.interruptA = None
         self.interruptB = None
 
+        self.changedHandler = None
+
+    def Change(self):
+        if self.changedHandler:
+            self.changedHandler()
+
     def Write(self, addr, value):
         t = addr - self.baseAddr
         if t == 0x3:
@@ -39,7 +45,7 @@ class PPI:
 
 
     def BSR(self):
-        pass
+        self.Change()
 
     def InA(self):
         if self.cr & 0x10 == 0x00:
@@ -63,17 +69,20 @@ class PPI:
         if (self.cr & 0x10 == 0x10) and (self.cr & 0x60 != 0x60):
             return
         self.a = value
+        self.Change()
 
     def OutB(self, value):
         if self.cr & 0x02 == 0x02:
             return
         self.b = value
+        self.Change()
 
     def OutC(self, value):
         if self.cr & 0x08 == 0x00:
             self.c = (value & 0xF0) | (self.c & 0x0F)
         if self.cr & 0x01 == 0x00:
             self.c = (self.c & 0xF0) | (value & 0x0F)
+        self.Change()
 
 
     def SetInterruptCallPA(self, call):

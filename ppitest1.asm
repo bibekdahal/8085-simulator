@@ -1,0 +1,8 @@
+
+MVI A, 80
+OUT 43
+
+MVI A, 56
+OUT 41
+
+HLT

@@ -299,6 +299,9 @@ class CU:
             return
         self.Ret()
 
+    def Hlt(self):
+        self.SetPC(self.GetPC()-1)
+
     def SingleStep(self):
         self.FetchAndDecode()
         self.ProcessInterrupts()
@@ -309,7 +312,7 @@ class CU:
         if byte == 0x00:
             pass
         elif byte == 0x76:
-            self.running = False
+            self.Hlt()
         elif byte in mvi_map:
             self.Mvi()
         elif byte+2 in mvi_map:

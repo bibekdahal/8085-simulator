@@ -19,7 +19,7 @@ ins_len3 = [ 'LXI', 'JMP', 'JNZ', 'JZ', 'JNC', 'JC', 'JPO', 'JPE', 'JP', 'JM',
                     'CALL', 'CNZ', 'CZ', 'CNC', 'CC', 'CPO', 'CPE', 'CP', 'CM',
                     'LHLD', 'LDA', 'STA', 'SHLD', 'LDA', 'STA' ]
 
-imm_opcodes = { 'ADI':0xC6, 'ACI':0xCE, 'SUI':0xD6, 'SBI':0xDE, 'ANI':0xE6, 'XRI':0xEE, 'ORI':0xF6, 'CPI':0xFE }
+imm_opcodes = { 'ADI':0xC6, 'ACI':0xCE, 'SUI':0xD6, 'SBI':0xDE, 'ANI':0xE6, 'XRI':0xEE, 'ORI':0xF6, 'CPI':0xFE, 'OUT':0xD3, 'IN':0xDB }
 addr_opcodes = { 'LDA': 0x3A, 'STA':0x32, 'JMP':0xC3, 'CALL':0xCD }
 
 singlebytereg_opcodes = { 'ADD':0x80, 'ADC':0x88, 'SUB':0x90, 'SBB':0x98, 'ANA':0xA0, 'XRA':0xA8, 'ORA':0xB0, 'CMP':0xB8 } 

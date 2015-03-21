@@ -8,6 +8,8 @@ from Bus import Bus
 from PPI import PPI
 from Assembler import Assembler
 
+from PPIWindow import PPIWindow
+
 from HexEntry import HexEntry
 
 from threading import Thread
@@ -15,27 +17,31 @@ from functools import partial
 import re
 import time
 from enum import Enum
+import sys
+
+def is_hex(s):
+    try:
+        int(s, 16)
+        return True
+    except ValueError:
+        return False
+
 
 bus = Bus()
 ram = RAM(0x0, 64)
-ppi = PPI(0x40)
 bus.AddMemoryPeripheral(ram, 0x0, 0x0+64*1024-1)
-bus.AddIOPeripheral(ppi, 0x40, 0x40+3)
 
 alu = ALU()
 cu = CU(alu, bus)
 
-ppi.SetInterruptCallPA(partial(cu.RST, 5.5, ppi))
-ppi.SetInterruptCallPB(partial(cu.RST, 6.5, ppi))
- 
-cu.Reset()
-cu.SetPC(0x8000)
+def AddPPI(addr):
+    ppi = PPI(0x40)
+    bus.AddIOPeripheral(ppi, addr, addr+3)
+    ppi.SetInterruptCallPA(partial(cu.RST, 5.5, ppi))
+    ppi.SetInterruptCallPB(partial(cu.RST, 6.5, ppi))
+    return ppi
 
-alu = ALU()
-cu = CU(alu, bus)
-
-ppi.SetInterruptCallPA(partial(cu.RST, 5.5, ppi))
-ppi.SetInterruptCallPB(partial(cu.RST, 6.5, ppi))
+   
 
 class State(Enum):
     none = 0
@@ -43,6 +49,19 @@ class State(Enum):
     exam_reg = 2
     go = 3
     executing = 4
+
+def execute():
+    try:
+        cu.Run()
+    except Exception as ex:
+        print()
+        print ("Error: ")
+        print ("=======")
+        print(ex)
+        print("\tat address: " + hex(alu.registers['PC']))
+        print()
+        cu.Reset()
+
 
 
 def WriteMemData(addr, data):
@@ -62,13 +81,34 @@ def PrevReg(reg):
         id = len(reglist) - 1
     return reglist[id]
 
+class Logger(object):
+    def __init__(self, label):
+        self.msgbox = label
+        self.terminal = sys.stdout
+        self.msg = ""
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.msg += message
+        self.msgbox.set_text(self.msg)
+
+    def flush(self):
+        self.msg = ""
+        self.msgbox.set_text("")
+
 class Window(Gtk.Window):
     def __init__(self):
         Gtk.Window.__init__(self,title="8085 Emulator")
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(10)
+        
+        parentBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        extra_box = Gtk.Box(spacing=10)
+
         vm_box=Gtk.Box(spacing=10)
-        self.add(vm_box)
+        parentBox.add(vm_box)
+        parentBox.add(extra_box)
+        self.add(parentBox)
         
         verh1_box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10)
         verh2_box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10)
@@ -187,8 +227,6 @@ class Window(Gtk.Window):
         box1 = Gtk.Box(spacing=10)
 
         scrolledwindow = Gtk.ScrolledWindow()
-        scrolledwindow.set_hexpand(True)
-        scrolledwindow.set_vexpand(True)
         self.textEditor = Gtk.TextView()
         self.textEditor.set_left_margin(20)
         self.textEditor.override_font(Pango.font_description_from_string("Dejavu Sans Mono 10"))
@@ -203,10 +241,30 @@ class Window(Gtk.Window):
         self.loadaddr.set_alignment(1)
         self.loadaddr.set_text('8000')
 
+        scrolledwindow2 = Gtk.ScrolledWindow()
+        self.notifier = Gtk.Label("")
+        self.notifier.set_valign(1)
+        self.notifier.set_halign(1)
+        scrolledwindow2.add(self.notifier)
+
         scrolledwindow1 = Gtk.ScrolledWindow()
-        scrolledwindow1.set_min_content_width(200)
-        self.lblLabel = Gtk.Label("Labels From The Program")
+        scrolledwindow1.set_min_content_width(250)
+        self.lblLabel = Gtk.Label("")
+        self.lblLabel.set_valign(1)
+        self.lblLabel.set_halign(1)
         scrolledwindow1.add(self.lblLabel)
+    
+        noticeBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        lbl = Gtk.Label()
+        lbl.set_markup("<span weight='bold'>Labels Used</span>")
+        lbl.set_halign(1)
+        noticeBox.pack_start(lbl, False, True, 0)
+        noticeBox.pack_start(scrolledwindow1, True, True, 0)
+        lbl = Gtk.Label()
+        lbl.set_markup("<span weight='bold'>Messages</span>")
+        lbl.set_halign(1)
+        noticeBox.pack_start(lbl, False, True, 0)
+        noticeBox.pack_start(scrolledwindow2, True, True, 0)
 
         loadButton = Gtk.Button("Load to Memory")
         loadButton.connect('clicked', self.load_button)
@@ -217,16 +275,64 @@ class Window(Gtk.Window):
         strip.add(loadButton)
 
         box1.pack_start(scrolledwindow, True, True, 0)
-        box1.pack_start(scrolledwindow1, False, True, 0)
+        box1.pack_start(noticeBox, False, True, 0)
 
         verh2_box.pack_start(box1, True, True, 0)
         verh2_box.pack_start(strip, False, True, 0)
         vm_box.pack_start(verh2_box,True,True,0)
+
+
+        strip2 = Gtk.Box(spacing=10)
+
+        ppilbl = Gtk.Label("PPI Base Address: ")
+        self.ppiaddr = Gtk.Entry()
+        self.ppiaddr.set_max_length(4)
+        self.ppiaddr.set_alignment(1)
+        self.ppiaddr.set_text('40')
+        ppiButton = Gtk.Button("    Add PPI    ")
+        ppiButton.connect('clicked', self.add_ppi)
+
+
+        strip2.add(ppilbl)
+        strip2.add(self.ppiaddr)
+        strip2.add(ppiButton)
+        extra_box.pack_start(strip2, False, True, 0)
+        
+        tablestrip = Gtk.Box(spacing=10)
+        lbl = Gtk.Label("Table: Start Address:")
+        self.tablestart = Gtk.Entry()
+        self.tablestart.set_max_length(4)
+        self.tablestart.set_alignment(1)
+        self.tablestart.set_text('9000')
+        tablestrip.add(lbl)
+        tablestrip.add(self.tablestart)
+
+        lbl = Gtk.Label("End Address:")
+        self.tableend = Gtk.Entry()
+        self.tableend.set_max_length(4)
+        self.tableend.set_alignment(1)
+        self.tableend.set_text('900A')
+        tablestrip.add(lbl)
+        tablestrip.add(self.tableend)
+        
+        tablebutton = Gtk.Button("View Table")
+        tablebutton.connect("clicked", self.table)
+        tablestrip.add(tablebutton)
+
+        parentBox.pack_start(tablestrip, False, True, 0)
+        self.tablelbl = Gtk.Label()
+        tableBox = Gtk.ScrolledWindow()
+        tableBox.add(self.tablelbl)
+        parentBox.pack_start(tableBox, False, True, 0)
         
         self.resize(800, 400)
 
         self.focus_box = 0
         self.reset()
+
+        self.ppis = []
+
+        sys.stdout = Logger(self.notifier)
 
     def file_button(self, w):
         dialog = Gtk.FileChooserDialog("Open File", self, Gtk.FileChooserAction.OPEN, 
@@ -240,24 +346,78 @@ class Window(Gtk.Window):
         elif res == Gtk.ResponseType.CANCEL:
             pass
         dialog.destroy()
+    
+    def add_ppi(self, w):
+        ppi = {}
+        try:
+            ppi["addr"] = int(self.ppiaddr.get_text(), 16)
+        except ValueError:
+            ppi["addr"] = 0
+        ppi["ppi"] = AddPPI(ppi["addr"])
+        ppi["win"] = PPIWindow(ppi["ppi"])
+        win = ppi["win"]
+        self.ppis.append(ppi)
+        win.connect('delete-event', self.remove_ppi)
+
+    def get_ppi(self, window):
+        index = [x["win"] for x in self.ppis].index(window)
+        return self.ppis[index]
+
+    def remove_ppi(self, w, e):
+        self.ppis.remove(self.get_ppi(w))
 
     def load_button(self, w):
         tb = self.textEditor.get_buffer()
         string = tb.get_text(tb.get_start_iter(), tb.get_end_iter(), False)
         asm = Assembler()
-        asm.Lex(string)
-        asm.Parse()
-        addr = int(self.loadaddr.get_text(), 16)
-        i = 0
-        for byte in asm.bytes:
-            ram.Write(addr+i, byte)
-            i += 1
-        
-        strlbl = ""
-        for lbl in asm.labels:
-            strlbl += "\n" + lbl + " : " + hex(asm.labels[lbl])
-        self.lblLabel.set_text(strlbl)
+        try:
+            asm.Lex(string)
+            asm.Parse()
+            addr = int(self.loadaddr.get_text(), 16)
+            i = 0
+            for byte in asm.bytes:
+                ram.Write(addr+i, byte)
+                i += 1
+            
+            strlbl = ""
+            for lbl in asm.labels:
+                strlbl += "\n" + lbl + " : " + hex(asm.labels[lbl])
+            self.lblLabel.set_text(strlbl)
+            self.Clear()
+            print("Assembled and loaded succesfully")
     
+        except Exception as ex:
+            self.lblLabel.set_text("")
+            self.Clear()
+            print ("Assembling Error: ")
+            print ("=======")
+            print(ex)
+            print("at line: \n\t" + asm.line + "\nline no.: " + str(asm.line_no))
+    def Clear(self):
+        sys.stdout.flush()
+
+    def table(self, w):
+        try:
+            saddr = int(self.tablestart.get_text(),16)
+        except ValueError:
+            saddr = 0
+        try:
+            eaddr = int(self.tableend.get_text(),16)
+        except ValueError:
+            eaddr = 0
+        if eaddr < saddr:
+            tmp = saddr
+            saddr = eaddr
+            eaddr = tmp
+        addr = saddr
+        string = ""
+        while addr <= eaddr:
+            data = '{:02x}'.format(GetMemData(addr))
+            addrs = '{:04x}'.format(addr)
+            string += "\t" + addrs + ": " + data
+            addr += 1
+        self.tablelbl.set_text(string)
+
     def addr_focus(self, w, e):
         self.focus_box = 0
 
@@ -294,6 +454,9 @@ class Window(Gtk.Window):
                     else:
                         reg = PrevReg(curreg)
                     self.entry_addr.set_text(reg)
+                elif self.singleStepping and input=="Next":
+                    self.SingleStep()
+                    
                 self.change_data()
 
 
@@ -307,21 +470,13 @@ class Window(Gtk.Window):
                 self.go()
 
             elif input == "Single step":
-                global cu
-                if self.executing:
-                    if self.state != State.go:
-                        self.state = State.go
-                        self.entry_hex.set_editable(False)
-                        self.entry_addr.set_text(self.lastAddr)
-                    cu.SetPC(int(self.entry_addr.get_text(), 16))
-                    cu.SingleStep()
-                    self.entry_addr.set_text('{:04x}'.format(cu.GetPC()))
-                    self.change_data()
+                self.SingleStep()
+                
             elif input == "Exec":
                 if self.executing:
                     self.state = State.executing
                     cu.SetPC(int(self.entry_addr.get_text(), 16))
-                    thread = Thread(target=cu.Run)
+                    thread = Thread(target=execute)
                     thread.start()
                     thread1 = Thread(target=self.on_executing)
                     thread1.daemon = True
@@ -338,12 +493,31 @@ class Window(Gtk.Window):
                     box.set_text(box.get_text()[1:4]+input)
                 else:
                     box.set_text(box.get_text()+input)
+
+    def SingleStep(self):
+        global cu
+        if self.executing:
+            if self.state != State.go:
+                self.state = State.go
+                self.entry_hex.set_editable(False)
+                self.entry_addr.set_text(self.lastAddr)
+                self.singleStepping = True
+                self.change_data()
+                return
+            cu.SetPC(int(self.entry_addr.get_text(), 16))
+            cu.SingleStep()
+            self.singleStepping = True
+            self.entry_addr.set_text('{:04x}'.format(cu.GetPC()))
+            self.change_data()
     
     def on_executing(self):
         Gdk.threads_enter()
         self.executing = True
         self.entry_addr.set_text("----")
         self.entry_hex.set_text("--")
+        self.pc_text.set_text("PC: ---- ")
+        self.sp_text.set_text("SP: ---- ")
+        self.flags_text.set_text("FLAGS: -------- ")
         Gdk.threads_leave()
         while cu.running:
             pass
@@ -358,6 +532,7 @@ class Window(Gtk.Window):
     def exam_mem(self):
         if self.state == State.executing:
             return
+        self.singleStepping = False
         if self.executing:
             self.lastAddr = self.entry_addr.get_text()
         self.entry_addr.grab_focus()
@@ -369,6 +544,7 @@ class Window(Gtk.Window):
     def exam_reg(self):
         if self.state == State.executing:
             return
+        self.singleStepping = False
         if self.executing:
             self.lastAddr = self.entry_addr.get_text()
         self.state = State.exam_reg
