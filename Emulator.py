@@ -627,8 +627,6 @@ class Window(Gtk.Window):
         self.entry_hex.set_editable(False)
 
     def reset(self, resetAlu=True):
-        self.entry_addr.set_text("-UPS")
-        self.entry_hex.set_text("85")
         self.entry_hex.set_editable(False)
         self.executing = False
         self.entry_addr.grab_focus()
@@ -639,7 +637,9 @@ class Window(Gtk.Window):
         self.change_data()
         self.state = State.none
         self.singleStepping = False
-
+        self.entry_addr.set_text("-UPS")
+        self.entry_hex.set_text("85")
+        
     def go(self):
         if self.state == State.executing:
             return

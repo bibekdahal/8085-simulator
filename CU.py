@@ -386,6 +386,61 @@ class CU:
             self.Lda()
         elif byte == 0x32:
             self.Sta()
+        elif byte == 0xEB:
+            tmp = self.alu.GetDE()
+            self.alu.SetDE(self.alu.GetHL())
+            self.alu.SetHL(tmp)
+        elif byte == 0x0A:
+            data = self.bus.ReadMemory(self.alu.GetBC())
+            self.alu.registers['A'] = data
+        elif byte == 0x1A:
+            data = self.bus.ReadMemory(self.alu.GetDE())
+            self.alu.registers['A'] = data
+        elif byte == 0x02:
+            data = self.alu.registers['A']
+            self.bus.WriteMemory(self.alu.GetBC(), data)
+        elif byte == 0x12:
+            data = self.alu.registers['A']
+            self.bus.WriteMemory(self.alu.GetDE(), data)
+        elif byte == 0x22:
+            byteL = self.Fetch()
+            byteH = self.Fetch()
+            addr = (byteH << 8) | byteL
+            self.bus.WriteMemory(addr, self.alu.registers['L'])
+            self.bus.WriteMemory(addr+1, self.alu.registers['H'])
+        elif byte == 0x2A:
+            byteL = self.Fetch()
+            byteH = self.Fetch()
+            addr = (byteH << 8) | byteL
+            dataL = self.bus.ReadMemory(addr)
+            dataH = self.bus.ReadMemory(addr+1)
+            self.alu.registers['L'] = dataL
+            self.alu.registers['H'] = dataH
+        elif byte == 0x2F:
+            self.alu.Not()
+        elif byte == 0x37:
+            self.alu.SetCarry(True)
+        elif byte == 0x3F:
+            self.alu.SetCarry(not self.alu.GetCarry())
+        elif byte == 0x27:
+            self.alu.DecimalAdjust()
+        elif byte == 0xE3:
+            data1 = self.bus.ReadMemory(self.alu.registers['SP'])
+            data2 = self.bus.ReadMemory(self.alu.registers['SP']+1)
+            self.bus.WriteMemory(self.alu.registers['SP'], self.alu.registers['L'])
+            self.bus.WriteMemory(self.alu.registers['SP']+1, self.alu.registers['H'])
+            self.alu.registers['L'] = data1
+            self.alu.registers['H'] = data2
+        elif byte == 0x09:
+            self.alu.DoubleAddition(self.alu.GetBC())
+        elif byte == 0x19:
+            self.alu.DoubleAddition(self.alu.GetDE())
+        elif byte == 0x29:
+            self.alu.DoubleAddition(self.alu.GetHL())
+        elif byte == 0x39:
+            self.alu.DoubleAddition(self.alu.registers['SP'])
+        elif byte == 0xF9:
+            self.alu.registers['SP'] = self.alu.GetHL()
         elif byte == 0x07:
             self.alu.Rlc()
         elif byte == 0x0F:

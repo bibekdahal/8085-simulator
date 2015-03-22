@@ -26,7 +26,7 @@ singlebytereg_opcodes = { 'ADD':0x80, 'ADC':0x88, 'SUB':0x90, 'SBB':0x98, 'ANA':
 singlebyte_opcodes = { 'RET':0xC9, 'HLT':0x76, 'RLC':0x07, 'RRC':0x0F, 'RAL':0x17, 'RAR':0x1F, 'CMA':0x2E, 'DDA':0x27, 'CMC':0x3F,
                         'STC':0x37, 'EI':0xFB, 'DI':0xFB, 'NOP':0x00, 'XTHL':0xE3, 'SPHL':0xF9, 'SIM':0x30, 'RIM':0x20, 'XCHG':0xEB }
 
-misc_opcodes = [ 'MOV', 'INX', 'DCX', 'INR', 'DCR', 'PUSH', 'POP' ]
+misc_opcodes = [ 'MOV', 'INX', 'DCX', 'INR', 'DCR', 'PUSH', 'POP', 'DAD', 'RST' ]
 
 def is_hex(s):
     try:
@@ -102,7 +102,7 @@ class Assembler:
             s["line_no"] = lineno
             s["label"] = ""
             s["type"] = "ASM"
-            if (is_hex(s["opcode"]) and s["opcode"]!="ADD"):
+            if (is_hex(s["opcode"]) and s["opcode"]!="ADD" and s["opcode"]!='DAA' and s["opcode"]!='DAD'):
                 s["type"] = "HEX"
                 s["data"] = []
                 for t in tokens:
@@ -216,6 +216,14 @@ class Assembler:
            self.ErrorUnexpectedSecondOperand()
         self.AddByte(rst_map[int(self.op1)])
 
+    def Dad(self):
+        dad_map = { 'B':0x09, 'D':0x19, 'H':0x29, 'SP':0x39 }
+        if self.op1 is None or not self.op1 in dad_map:
+            self.ErrorFirstOperand()
+        if self.op2:
+            self.ErrorUnexpectedSecondOperand()
+        self.AddByte(dad_map[self.op1])
+
     def Lxi(self):
         if not self.op1 in lxi_map:
             self.ErrorFirstOperand()
@@ -323,6 +331,8 @@ class Assembler:
                     self.Pop()
                 elif oc == "RST":
                     self.Rst()
+                elif oc == "DAD":
+                    self.Dad()
                 elif oc in addr_opcodes:
                     self.AddressInstruction(addr_opcodes[oc])
                 elif oc in imm_opcodes:
