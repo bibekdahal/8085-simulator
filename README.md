@@ -14,8 +14,14 @@ Additionally, we were assigned to write a program in assembly language that can:
 
 ### Design Approach
 
-The software is built in Python scripting language using Object Oriented approach. Classes representing different elements of the microprocessor and the PPI are created with appropriate methods. The project was first created to run in console by reading machine langauge program from a text file and was tested properly. Then a parser to read assembly language program and convert it to machine codes was built. Finally a graphical user interface (GUI) was added for proper user interaction.
-The 8085+8255 was designed using combinations of objects of following classes:
+The software is built in Python scripting language using Object Oriented approach. Classes representing different elements of the microprocessor and the PPI are created with appropriate methods. 
+
+The software is built using sequential design process. After understanding the problem statement, appropriate tools for developement were chosen and the overall project was designed in paper. The 8085 and 8255 were then developed and tested to run by reading machine langauge program from a text file. Then an assembler to read assembly language program and convert it to machine codes was built. Finally a graphical user interface (GUI) was added for proper user interaction. Finally, the random data sorter program was written ans successfully tested in the developed software.
+
+For efficient teamwork and version control, GIT version control system is used. The central repository of the program is hosted in GitHub.
+
+##### 8085 Microprocessor and 8255 PPI
+The 8085 and 8255 were designed using combinations of objects of following classes:
 ###### ALU
 The Arithmetic Logic Unit is emulated using a class containing an array of registers (each storing a byte) and the methods to perform various arithmetic and logical operations like Add, Subtract, And, Or, Xor, Not etc. As with 8085, the ALU assumes one of its operand as register 'A' and can take any other byte as its second operand. For Double Addition, it assumes one of its operand as HL-register pair and can take any other double-bytes as second operand. The register array holds the general purpose registers (A, B, C, D, E, H, L), the flags (F), the program counter (PC) and the stack pointer (SP).
 ###### CU
@@ -27,7 +33,9 @@ RAM holds an array of bytes of size specified (by default 64K). Each byte can be
 ###### PPI
 The 8255 PPI can be addressed as IO or memory using the Bus. The PPI stores 4 bytes in Port-A, Port-B, Port-C and Control Register. The read/write operation (performed by CU through the Bus) are handled according to the control word held in the control register. For Mode-1 and Mode-2 input operations, interrupt function objects can be assigned to the PPI, so that when strobe signal is sent, the interrupt function is called. The actual interrupt functions are implemented in the CU.
 
-Following design pattern is used to design the overall project:
+TODO: UML
+
+Following design patterns were used in designing above elements:
 ###### Signal Line Representation
 Interrupt and Interrupt Acknowledge signals, IO/Memory addresses and data and any other signals that can flow through hardware wires/lines are implemented using simple function calls. Any data to be placed is sent as parameter to such function. For example, when the PPI needs to send the interrupt signal to the microprocessor, it calls the Interrupt function of the CU and the microprocessor to acknowledge the interrupt calls the Interrupt-Acknowledge function of the interrupting object.
 ###### Byte Storage
@@ -37,14 +45,58 @@ Interrupts can be provided at the middle of operations. To allow this asynchrono
 ###### Machine Codes
 Since the machine language opcodes are too many, proper analysis to find a common pattern among the opcodes is used to simplify the programming of the CU.
 
-The Parser is built using a single class that can read from a file any assembly or machine langauge program and convert them into each other. Process of parsing contains simple steps of:
+##### Assembler
+The Assembler is built using a single class that can read from a file any assembly or machine langauge program and convert them into each other. Process of parsing contains simple steps of:
 - lexically analyzing the tokens and store the tokens in list
 - syntatically analyzing the list of tokens to find errors
 - converting the syntatically analyzed tokens from assembly language to machine language (or vice versa)
 
-The GUI is built using GTK library for Python (PyGObject). The library was chosen to make the software cross platform. The GUI consists of interfaces for both 8085 and 8255. The 8085 GUI consists of buttons and displays similar to the kit in the college laboratory and can be used to input program and data to memory, to read/write from registers, to perform single step execution and to run the program from certain memory address. The 8255 GUI contains options to provide inputs to the ports, read outputs from the ports and strobe buttons (S1 and S2) for strobed input.
+TODO: Flow Chart
 
-##### Data Sorter:
-...TODO
+##### GUI
+The GUI is built using GTK library for Python (PyGObject). The library was chosen to make the software cross platform. The GUI consists of interfaces for both 8085 and 8255. The 8085 GUI consists of buttons and displays similar to the kit in the college laboratory and can be used to input program and data to memory, to view register values, to perform single step execution and to run the program from certain memory address. Besides these, it also contains a text editor with syntax highlighting features for writing and viewing assembly programs. The program from the editor can be assembled and loaded to the memory at any given address and can be run instantly. The 8255 GUI contains options to provide inputs to the ports, read outputs from the ports and strobe buttons (S1 and S2) for strobed input.
 
+TODO: State Diagram
 
+##### Random Data Generator and Data Sorter:
+For random data generation, a simple version of XOR-Shift algorithm is used. A seed value X is taken and bit shifted once to left. The bit-shifted X and the original X are xor-ed together to get a new random value. This random value acts as seed value for next generation.
+For data sorting, selection sort and bubble sort are both implemented. These functions are then appropriately called as per the user input from PPI.
+
+TODO: Alogrithms
+
+### Source Code
+
+TODO
+
+### GUI Results
+
+TODO: Snapshots
+
+### Comparision of simulation output and hardware output
+
+1. Review of Assembly Language Programming (Lab 1)
+All programs were successfully run in both hardware and simulator and gave exactly same result.
+
+2. Interfacing with 8255 PPI (Lab 2)
+While the 8255 PPI hardware and PPI window GUI of simulator were feature-wise slightly different, the actual output from programs run in both were similar and the simulator can be considered to be good substitute for actual hardware.
+
+3. Data Sorter
+The final output of data sorter from both hardware and simulator were same. However, the time required by the simulator seems longer in both random generation and data sorting process.
+
+### Discussion and Analysis
+The final result of the program is obtained as was designed and expected. Following features have been successfully implemented:
+- Simulation of 8085 microprocessor and 8255 PPI
+- GUI emulating the behaviour of 8085 microprocessor lab kit
+- Code Editor with syntax highlighting for writing, loading and saving assembly language programs
+- Assembler to assemble the assembly language programs and view syntax errors in a program
+- Attach any number of 8255 PPIs at any IO addresses
+- Input to ports of 8255 PPI, view output from the ports and send STB singnals to PPI using buttons
+- View table of memory data
+
+Final program simulates the behaviour of 8085 and 8255 well in functionality. However the timing behaviour was not quite the best. The random number generation and data sorting algorithms take longer than expected. This is mainly due to python being a scripting language and simulator being run by software rather than hardware. Another limitation of the simulator is lack of peripherals. While the design of software is extensible to accept further hardware-simulating programs, the acutal final software only supports RAM and PPI. Yet any 8085 program can be run by the simulator that requires memory and 8255 PPI only as peripherals.
+
+### Conclusion
+
+The software development successfully completed in time. This is probably due to good design and problem planning at the beginning. Chances to learn new programming language and libraries was obtained through this project and we are very glad to participate in it.
+
+This software itself can be considered successful in terms of its functionality. Hopefully, it can help students in learning the programing of 8085 and 8255 hardwares without availability of real hardwares and without abiding in translating assembly programs to machine language.
