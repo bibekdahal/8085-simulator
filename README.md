@@ -2,8 +2,20 @@
 
 Main Application: Emulator.py
 
-## Documentation
-### Problem Statement
+## Project Report
+
+### Acknowledgement
+
+We would like to thank **Deparment of Electronics and Computer Engineering**, Central Campus, Pulchowk, specially **Mr. Dinesh Baniya Kshatri** for providing us an opportunity to work in this project and to learn many important concepts on hardware simulation, assembling and 8085/8255 programming.
+
+Thanks to everyone for helping and supporting us in this project.
+
+- Ayush Shakya
+- Bhawana Piryani
+- Bibek Dahal
+- Bibek Koirala
+
+### Introduction
 
 As part of the subject course of Instrumentation II, the project **8085 Microprocessor and 8255 PPI Simulator** has been assigned to us. In the project, we were assigned to design a software simulating the 8085 Microprocessor and the 8255 PPI and write the software in Python language. The objective of such project was for us to familiarize in emulating an instrumentation system in software.
 Additionally, we were assigned to write a program in assembly language that can:
@@ -93,13 +105,14 @@ For data sorting, selection sort and bubble sort are both implemented. These fun
 
 TODO
 
-### GUI Results
+### GUI Snapshots
 
+#### Main Window
 ![Main Window](images/GUI0.png?raw=true)
 
-
+#### PPI Window
 ![PPI Window](images/PPI0.png?raw=true)
-TODO: Snapshots
+
 
 ### Comparision of simulation output and hardware output
 
