@@ -55,7 +55,7 @@ Interrupt and Interrupt Acknowledge signals, IO/Memory addresses and data and an
 ###### Byte Storage
 Since Python doesn't have specific "byte" data type, just number is stored when storing a byte. Appropriate checkings are done at proper positions in the program to allow only bytes.
 ###### Asynchronous Interrupts
-Interrupts can be provided at the middle of operations. To allow this asynchronous behaviour, multithreading is used. The CU executes the operations in a different thread and the devices can provide interrupts from the main thread.
+Interrupts can be provided at the middle of operations. To allow this asynchronous behavior, multithreading is used. The CU executes the operations in a different thread and the devices can provide interrupts from the main thread.
 ###### Machine Codes
 Since the machine language opcodes are too many, proper analysis to find a common pattern among the opcodes is used to simplify the programming of the CU.
 
@@ -107,10 +107,10 @@ TODO
 
 ### GUI Snapshots
 
-#### Main Window
+##### Main Window
 ![Main Window](images/GUI0.png?raw=true)
 
-#### PPI Window
+##### PPI Window
 ![PPI Window](images/PPI0.png?raw=true)
 
 
@@ -128,17 +128,17 @@ The final output of data sorter from both hardware and simulator were same. Howe
 ### Discussion and Analysis
 The final result of the program is obtained as was designed and expected. Following features have been successfully implemented:
 - Simulation of 8085 microprocessor and 8255 PPI
-- GUI emulating the behaviour of 8085 microprocessor lab kit
+- GUI emulating the behavior of 8085 microprocessor lab kit
 - Code Editor with syntax highlighting for writing, loading and saving assembly language programs
 - Assembler to assemble the assembly language programs and view syntax errors in a program
 - Attach any number of 8255 PPIs at any IO addresses
 - Input to ports of 8255 PPI, view output from the ports and send STB singnals to PPI using buttons
 - View table of memory data
 
-Final program simulates the behaviour of 8085 and 8255 well in functionality. However the timing behaviour was not quite the best. The random number generation and data sorting algorithms take longer than expected. This is mainly due to python being a scripting language and simulator being run by software rather than hardware. Another limitation of the simulator is lack of peripherals. While the design of software is extensible to accept further hardware-simulating programs, the acutal final software only supports RAM and PPI. Yet any 8085 program can be run by the simulator that requires memory and 8255 PPI only as peripherals.
+Final program simulates the behavior of 8085 and 8255 well in functionality. However the timing behavior was not quite the best. The random number generation and data sorting algorithms take longer than expected. This is mainly due to python being a scripting language and simulator being run by software rather than hardware. Another limitation of the simulator is lack of peripherals. While the design of software is extensible to accept further hardware-simulating programs, the acutal final software only supports RAM and PPI. Yet any 8085 program can be run by the simulator that requires memory and 8255 PPI only as peripherals.
 
 ### Conclusion
 
-The software development was successfully completed in time. This is probably due to good design and problem planning at the beginning. Chances to learn new programming language and libraries was obtained through this project and we are very glad to participate in it.
+The software development was successfully completed in time. This is probably due to good design and proper planning at the beginning. Chances to learn new programming language and libraries was obtained through this project and we are very glad to participate in it.
 
 This software itself can be considered successful in terms of its functionality. Hopefully, it can help students in learning the programing of 8085 and 8255 hardwares without availability of real hardwares and without spending time in translating assembly programs to machine language.
