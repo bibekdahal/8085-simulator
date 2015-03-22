@@ -3,7 +3,6 @@
 
     MVI A, FF
     OUT 41
-    OUT 42
     
     CALL GENERATE
     MVI A, 00
@@ -17,13 +16,23 @@ LOOP:
     JMP LOOP
 
 8FB3: 
+    JMP BBL
+
+8FB9:
+    JMP SSL
+
+BBL:
     CALL BUBBLE_SORT
-    MVI A, AA
+    MVI A, F0
     OUT 41
     EI
     RET
-
- 
+SSL:
+    CALL SELECTION_SORT
+    MVI A, 0F
+    OUT 41
+    EI
+    RET
 
 
 ; Get table address offset by A in HL pair
