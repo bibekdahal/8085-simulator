@@ -47,7 +47,7 @@ class CU:
         self.bus.WriteMemory(0x002D, 0xB3)
         self.bus.WriteMemory(0x002E, 0x8F)
         self.bus.WriteMemory(0x0034, 0xC3)
-        self.bus.WriteMemory(0x0035, 0xB3)
+        self.bus.WriteMemory(0x0035, 0xB9)
         self.bus.WriteMemory(0x0036, 0x8F)
     
     def GetPC(self):

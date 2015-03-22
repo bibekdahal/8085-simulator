@@ -1,15 +1,15 @@
-    MVI A, B8
+   
+    MVI A, B4
     OUT 43
 
     MVI A, FF
-    OUT 41
+    OUT 42
     
     CALL GENERATE
     MVI A, 00
-    OUT 41
     OUT 42
 
-    MVI A, 0E
+    MVI A, 0C
     SIM
     EI
 LOOP: 
@@ -24,13 +24,13 @@ LOOP:
 BBL:
     CALL BUBBLE_SORT
     MVI A, F0
-    OUT 41
+    OUT 42
     EI
     RET
 SSL:
     CALL SELECTION_SORT
     MVI A, 0F
-    OUT 41
+    OUT 42
     EI
     RET
 
