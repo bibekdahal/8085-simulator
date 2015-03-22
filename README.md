@@ -95,6 +95,10 @@ TODO
 
 ### GUI Results
 
+![Main Window](images/GUI0.png?raw=true)
+
+
+![PPI Window](images/PPI0.png?raw=true)
 TODO: Snapshots
 
 ### Comparision of simulation output and hardware output
