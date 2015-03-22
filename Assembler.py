@@ -39,7 +39,7 @@ class Assembler:
     
     def __init__(self):
         self.asm = []
-        self.bytes = []
+        self.bytes_list = []
         self.labels = {}
 
     def IsIns(self, opcode):
@@ -271,7 +271,10 @@ class Assembler:
         addr = addr_base
         for s in self.asm:
             if s["label"] != "":
-                self.labels[s["label"]] = addr
+                if is_hex(s["label"]):
+                    addr = int(s["label"], 16)
+                else:
+                    self.labels[s["label"]] = addr
             if s["type"] == "ASM":
                 addr += self.GetInsLen(s["opcode"])
             else:
@@ -281,7 +284,15 @@ class Assembler:
 
     def Parse(self, addr_base=0x8000):
         self.CollectLabels(addr_base)
+        addr = addr_base
         for s in self.asm:
+            if s["label"] != "" and is_hex(s["label"]):
+                addr = int(s["label"], 16)
+            byte_list = {}
+            byte_list["address"] = addr
+            byte_list["bytes"] = []
+            self.bytes = byte_list["bytes"]
+             
             if s["type"] == "ASM":
                 oc = s["opcode"]
                 self.opcode = oc
@@ -332,4 +343,10 @@ class Assembler:
                         self.AddByte(t&0xFF)
                         t = t >> 8
                     self.AddByte(t)
+            
+            if s["type"] == "ASM":
+                addr += self.GetInsLen(s["opcode"])
+            else:
+                addr += len(s["data"])
+            self.bytes_list.append(byte_list)
 

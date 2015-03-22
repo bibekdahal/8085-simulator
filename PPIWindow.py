@@ -132,7 +132,7 @@ class PPIWindow(Gtk.Window):
                 self.ppi.StrobeA()
         elif switch.get_label() == 'S2':
             if self.ppi:
-                self.ppi.StrobeB()()
+                self.ppi.StrobeB()
 
     def Output(self, port, value):
         portId = [ 'A', 'B', 'C' ].index(port)

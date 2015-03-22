@@ -1,5 +1,11 @@
 #!/usr/bin/python3
 
+######
+# IGNORE THIS FILE
+# THIS IS NOT PART OF FINAL PROJECT
+# JUST A TEST PROGRAM
+#####
+
 from ALU import ALU
 from CU import CU
 from RAM import RAM
@@ -89,19 +95,21 @@ from Assembler import Assembler
 parser = Assembler()
 try:
     #main()
-    filep = open("random.asm", "r")
+    filep = open("samples/testlbl.asm", "r")
     asm = filep.read()
     filep.close()
     parser.Lex(asm)
     parser.Parse()
+    
+    #filep = open("random.bin", "w")
+    for bytes in parser.bytes_list:
+        print(hex(bytes["address"]))
+        for byte in bytes["bytes"]:
+            print(hex(byte))
+    #    filep.write('{0:02x}'.format(byte) + "\n")
+    #filep.close()
 
-    filep = open("random.bin", "w")
-    for byte in parser.bytes:
-        #print(hex(byte) + " ")
-        filep.write('{0:02x}'.format(byte) + "\n")
-    filep.close()
-
-    main()
+    #main()
 
 except (KeyboardInterrupt, SystemExit):
     print("")

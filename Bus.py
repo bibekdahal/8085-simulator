@@ -21,6 +21,10 @@ class Bus:
     def AddIOPeripheral(self, peripheral, startAddr, endAddr):
         self.io_peripherals[peripheral] = (startAddr, endAddr)
 
+    def RemoveIOPeripheral(self, peripheral):
+        if peripheral in self.io_peripherals:
+            del self.io_peripherals[peripheral]
+
     def ReadIO(self, addr):
         for k,v in self.io_peripherals.items():
             if addr >= v[0] and addr <= v[1]:

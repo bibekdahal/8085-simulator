@@ -7,10 +7,7 @@ from RAM import RAM
 from Bus import Bus
 from PPI import PPI
 from Assembler import Assembler
-
 from PPIWindow import PPIWindow
-
-from HexEntry import HexEntry
 
 from threading import Thread
 from functools import partial
@@ -27,7 +24,7 @@ alu = ALU()
 cu = CU(alu, bus)
 
 def AddPPI(addr):
-    ppi = PPI(0x40)
+    ppi = PPI(addr)
     bus.AddIOPeripheral(ppi, addr, addr+3)
     ppi.SetInterruptCallPA(partial(cu.RST, 5.5, ppi))
     ppi.SetInterruptCallPB(partial(cu.RST, 6.5, ppi))
@@ -316,11 +313,10 @@ class Window(Gtk.Window):
         tablestrip.add(lbl)
         tablestrip.add(self.tablestart)
 
-        lbl = Gtk.Label("End Address:")
+        lbl = Gtk.Label("Length:")
         self.tableend = Gtk.Entry()
-        self.tableend.set_max_length(4)
         self.tableend.set_alignment(1)
-        self.tableend.set_text('900A')
+        self.tableend.set_text('10')
         tablestrip.add(lbl)
         tablestrip.add(self.tableend)
         
@@ -376,7 +372,9 @@ class Window(Gtk.Window):
         return self.ppis[index]
 
     def remove_ppi(self, w, e):
-        self.ppis.remove(self.get_ppi(w))
+        ppi = self.get_ppi(w)
+        bus.RemoveIOPeripheral(ppi["ppi"])
+        self.ppis.remove(ppi)
     
     def run_button(self, w):
         if self.load_button(None):
@@ -389,15 +387,17 @@ class Window(Gtk.Window):
         asm = Assembler()
         try:
             asm.Lex(string)
-            asm.Parse()
             try:
                 addr = int(self.loadaddr.get_text(), 16)
             except:
                 addr = 0
-            i = 0
-            for byte in asm.bytes:
-                ram.Write(addr+i, byte)
-                i += 1
+            asm.Parse(addr)
+            for byte_list in asm.bytes_list:
+                ad = byte_list["address"]
+                i = 0
+                for byte in byte_list["bytes"]:
+                    ram.Write(ad+i, byte)
+                    i += 1
             
             strlbl = ""
             for lbl in asm.labels:
@@ -425,20 +425,17 @@ class Window(Gtk.Window):
         except ValueError:
             saddr = 0
         try:
-            eaddr = int(self.tableend.get_text(),16)
+            length = int(self.tableend.get_text())
         except ValueError:
-            eaddr = 0
-        if eaddr < saddr:
-            tmp = saddr
-            saddr = eaddr
-            eaddr = tmp
-        addr = saddr
+            length = 0
         string = ""
-        while addr <= eaddr:
+        i = 0
+        while i < length:
+            addr = saddr + i
             data = '{:02x}'.format(GetMemData(addr))
             addrs = '{:04x}'.format(addr)
             string += "\t" + addrs + ": " + data
-            addr += 1
+            i += 1
         self.tablelbl.set_text(string)
 
     def addr_focus(self, w, e):

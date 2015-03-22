@@ -72,7 +72,7 @@ For data sorting, selection sort and bubble sort are both implemented. These fun
 3. XOR the original X and LSH(X) to get new X: X = X xor LSH(X)
 4. Return X as random value and store it as new seed value for next generation
 
-###### Selection Sort Algorithm
+###### Selection Sort Algorithm for sorting in ascending order
 * For j = 0 to N-2
     * imin = j
     * For i = j to n-1
@@ -81,11 +81,11 @@ For data sorting, selection sort and bubble sort are both implemented. These fun
     * If imin != j
         * Swap(a[j], a[imin])
 
-###### Bubble Sort Algorithm
+###### Bubble Sort Algorithm for sorting in descending order
 * Repeat until not swapped
     * swapped = False
     * For i = 1 to n-1
-        * If a[i-1] > a[i]
+        * If a[i-1] < a[i]
             * Swap(A[i-1], A[i])
             * swapped = True
 
