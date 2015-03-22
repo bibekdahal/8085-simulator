@@ -1,5 +1,5 @@
     CALL GENERATE
-    CALL SELECTION_SORT
+    CALL BUBBLE_SORT
  
     HLT
 
@@ -79,40 +79,33 @@ Outer1:
 
 
 BUBBLE_SORT:
-        MVI C, 0x64
-OTR0:   MOV A, C
-        CPI 0
-        JC OTR1
-        
-        MVI E, 0
-INR0:   MOV A, C
-        DCR A
+        MVI C, 0            ; swapped = false
+        MVI E, 1            ; for i = 1 to n-1
+INR0:   MVI A, 0x64         
         CMP E
-        JC INR1
         JZ INR1
 
-        MOV D, E
-        INR D
-
+        MOV D, E                ; if a[i-1] > a[i]
+        DCR D
         MOV A, D
         CALL GET_MEMORY
         MOV B, M
         MOV A, E
         CALL GET_MEMORY
         MOV A, M
+
         CMP B
         JNC L678
-        CALL SWAP   
-
+        CALL SWAP                   ; swap(a[i-1], a[i])
+        MVI C, 1                    ; swapped = true
 L678:
-        
         INR E
         JMP INR0
 
 INR1:
-        DCR C
-        JMP OTR0
-OTR1:
+        MOV A, C            ; repeat until swapped = false
+        CPI 0
+        JNZ BUBBLE_SORT
         RET
 
 GENERATE:

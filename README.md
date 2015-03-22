@@ -53,18 +53,41 @@ The Assembler is built using a single class that can read from a file any assemb
 - syntatically analyzing the list of tokens to find errors
 - converting the syntatically analyzed tokens from assembly language to machine language (or vice versa)
 
-TODO: Flow Chart
+The overall assembling process is explained in following flowchart.
+![](images/Assembler-Flow-Chart.jpg?raw=true)
 
 ##### GUI
 The GUI is built using GTK library for Python (PyGObject). The library was chosen to make the software cross platform. The GUI consists of interfaces for both 8085 and 8255. The 8085 GUI consists of buttons and displays similar to the kit in the college laboratory and can be used to input program and data to memory, to view register values, to perform single step execution and to run the program from certain memory address. Besides these, it also contains a text editor with syntax highlighting features for writing and viewing assembly programs. The program from the editor can be assembled and loaded to the memory at any given address and can be run instantly. The 8255 GUI contains options to provide inputs to the ports, read outputs from the ports and strobe buttons (S1 and S2) for strobed input.
 
-TODO: State Diagram
+For the GUI emulating the Kit buttons, a kind of state machine is implemented. This allows the UI to remember the last buttons pressed and act accordingly when another button is pressed. The basis of this state machine is illustrated in following simple state diagram.
+![](images/8085GUIStateDiagram.jpg?raw=true)
 
 ##### Random Data Generator and Data Sorter:
 For random data generation, a simple version of XOR-Shift algorithm is used. A seed value X is taken and bit shifted once to left. The bit-shifted X and the original X are xor-ed together to get a new random value. This random value acts as seed value for next generation.
 For data sorting, selection sort and bubble sort are both implemented. These functions are then appropriately called as per the user input from PPI.
 
-TODO: Alogrithms
+###### Random Data Generator Alogrithm
+1. Take seed value X
+2. Left-shift X once: LSH(X)
+3. XOR the original X and LSH(X) to get new X: X = X xor LSH(X)
+4. Return X as random value and store it as new seed value for next generation
+
+###### Selection Sort Algorithm
+* For j = 0 to N-2
+    * imin = j
+    * For i = j to n-1
+        * If a[i] < a[imin]
+        *     imin = i
+    * If imin != j
+        * Swap(a[j], a[imin])
+
+###### Bubble Sort Algorithm
+* Repeat until not swapped
+    * swapped = False
+    * For i = 1 to n-1
+        * If a[i-1] > a[i]
+            * Swap(A[i-1], A[i])
+            * swapped = True
 
 ### Source Code
 
