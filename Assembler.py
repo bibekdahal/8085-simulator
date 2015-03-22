@@ -85,6 +85,15 @@ class Assembler:
                         raise Exception("Error: duplicate label name, previously defined at:\n\t"+x["line"]) 
                         break
             if len(tokens) == 0:
+                if lastLabel != "":
+                    s = {}
+                    s["data"] = [ 0 ]
+                    s["opcode"] = "00"
+                    s["type"] = "HEX"
+                    s["line_no"] = lineno
+                    s["line"] = line
+                    s["label"] = lastLabel
+                    self.asm.append(s)
                 continue
             s["opcode"] = tokens[0].upper()
             s["op1"] = None
@@ -108,14 +117,6 @@ class Assembler:
             s["label"] = lastLabel
             lastLabel = ""
             self.asm.append(s)
-        if lastLabel != "":
-            s = {}
-            s["data"] = [ 0 ]
-            s["opcode"] = "00"
-            s["type"] = "HEX"
-            s["label"] = lastLabel
-            self.asm.append(s)
-
         return True
     
     def AddByte(self, byte):
@@ -291,6 +292,8 @@ class Assembler:
             byte_list = {}
             byte_list["address"] = addr
             byte_list["bytes"] = []
+            byte_list["line_no"] = s["line_no"]
+            byte_list["asm"] = s["line"]
             self.bytes = byte_list["bytes"]
              
             if s["type"] == "ASM":

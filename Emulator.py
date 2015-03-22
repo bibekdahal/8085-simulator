@@ -234,8 +234,20 @@ class Window(Gtk.Window):
 
         scrolledwindow.add(self.textEditor)
 
-        fileButton = Gtk.Button("Load File")
-        fileButton.connect('clicked', self.file_button)
+        loadFileButton = Gtk.Button("Load File")
+        loadFileButton.connect('clicked', self.load_file)
+        savefilebutton = Gtk.Button("Save File")
+        savefilebutton.connect('clicked', self.save_file)
+        exportfilebutton = Gtk.Button("Export opcodes")
+        exportfilebutton.connect('clicked', self.export_file)
+        exportexfilebutton = Gtk.Button("Save asm with opcodes")
+        exportexfilebutton.connect('clicked', self.export_ex_file)
+
+        strip0 = Gtk.Box(spacing = 10)
+        strip0.add(loadFileButton)
+        strip0.add(savefilebutton)
+        strip0.add(exportfilebutton)
+        strip0.add(exportexfilebutton)
 
         loadLbl = Gtk.Label("Load Address: ")
         self.loadaddr = Gtk.Entry()
@@ -274,13 +286,16 @@ class Window(Gtk.Window):
         runButton = Gtk.Button("Load and Run")
         runButton.connect('clicked', self.run_button)
 
-        strip.add(fileButton)
         strip.add(loadLbl)
         strip.add(self.loadaddr)
         strip.add(loadButton)
         strip.add(runButton)
+        
+        editorBox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        editorBox.pack_start(strip0, False, True, 0)
+        editorBox.pack_start(scrolledwindow, True, True, 0)
 
-        box1.pack_start(scrolledwindow, True, True, 0)
+        box1.pack_start(editorBox, True, True, 0)
         box1.pack_start(noticeBox, False, True, 0)
 
         verh2_box.pack_start(box1, True, True, 0)
@@ -342,9 +357,20 @@ class Window(Gtk.Window):
 
         sys.stdout = Logger(self.notifier)
 
-    def file_button(self, w):
+    def AddFilters(self, dialog):
+        filter_asm = Gtk.FileFilter()
+        filter_asm.set_name("Asm Files")
+        filter_asm.add_pattern("*.asm")
+        dialog.add_filter(filter_asm)
+        filter_any = Gtk.FileFilter()
+        filter_any.set_name("Any Files")
+        filter_any.add_pattern("*")
+        dialog.add_filter(filter_any)
+
+    def load_file(self, w):
         dialog = Gtk.FileChooserDialog("Open File", self, Gtk.FileChooserAction.OPEN, 
                                 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        self.AddFilters(dialog)
         res = dialog.run()
         if res == Gtk.ResponseType.OK:
             fp = open(dialog.get_filename(), 'r')
@@ -354,7 +380,30 @@ class Window(Gtk.Window):
         elif res == Gtk.ResponseType.CANCEL:
             pass
         dialog.destroy()
-    
+
+    def save_file(self, w):
+        dialog = Gtk.FileChooserDialog("Save File", self, Gtk.FileChooserAction.SAVE, 
+                                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        dialog.set_current_name("untitled.asm")
+        dialog.set_do_overwrite_confirmation(True)
+        self.AddFilters(dialog)
+        res = dialog.run()
+        if res == Gtk.ResponseType.OK:
+            tb = self.textEditor.get_buffer()
+            string = tb.get_text(tb.get_start_iter(), tb.get_end_iter(), False)
+            fp = open(dialog.get_filename(), 'w')
+            fp.write(string)
+            fp.close()
+        elif res == Gtk.ResponseType.CANCEL:
+            pass
+        dialog.destroy()
+ 
+    def export_file(self, w):
+        self.ExportDialog()
+
+    def export_ex_file(self, w):
+        self.ExportDialog(True)
+      
     def add_ppi(self, w):
         ppi = {}
         try:
@@ -620,6 +669,61 @@ class Window(Gtk.Window):
         self.pc_text.set_text('PC: ' + '{:04x}'.format(alu.registers['PC']))
         self.sp_text.set_text('SP: ' + '{:04x}'.format(alu.registers['SP']))
         self.flags_text.set_text('FLAGS: ' + '{:08b}'.format(alu.registers['F']))
+
+    def ExportDialog(self, withAsm = False):
+        dialog = Gtk.FileChooserDialog("Export File", self, Gtk.FileChooserAction.SAVE, 
+                                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+        dialog.set_current_name("untitled.asm")
+        dialog.set_do_overwrite_confirmation(True)
+        self.AddFilters(dialog)
+        res = dialog.run()
+        if res == Gtk.ResponseType.OK:
+            self.Export(dialog.get_filename(), withAsm)
+        elif res == Gtk.ResponseType.CANCEL:
+            pass
+        dialog.destroy()
+        
+    def Export(self, filename, withAsm = False):
+        fp = open(filename, 'w')
+        tb = self.textEditor.get_buffer()
+        string = tb.get_text(tb.get_start_iter(), tb.get_end_iter(), False)
+        asm = Assembler()
+        try:
+            asm.Lex(string)
+            try:
+                addr = int(self.loadaddr.get_text(), 16)
+            except:
+                addr = 0
+            asm.Parse(addr)
+            for byte_list in asm.bytes_list:
+                ad = byte_list["address"]
+                i = 0
+                if withAsm:
+                    fp.write(byte_list["asm"] + "\t;")
+                else:
+                    fp.write('{:04x}'.format(ad)+": ")
+                for byte in byte_list["bytes"]:
+                    fp.write('{:02x}'.format(byte)+ " ")
+                    i += 1
+                if not withAsm:
+                    fp.write("\t\t;"+byte_list["asm"])
+                fp.write("\n")
+            strlbl = ""
+            for lbl in asm.labels:
+                strlbl += "\n" + lbl + " : " + hex(asm.labels[lbl])
+            self.lblLabel.set_text(strlbl)
+            self.Clear()
+            print("Assembled and exported succesfully")
+    
+        except Exception as ex:
+            self.lblLabel.set_text("")
+            self.Clear()
+            print ("Assembling Error: ")
+            print ("=======")
+            print(ex)
+            print("at line: \n\t" + asm.line + "\nline no.: " + str(asm.line_no))
+        fp.close()
+         
 
 GObject.threads_init()
 Gdk.threads_init()
