@@ -96,8 +96,8 @@ class Window(Gtk.Window):
         extra_box = Gtk.Box(spacing=10)
 
         vm_box=Gtk.Box(spacing=10)
-        parentBox.add(vm_box)
-        parentBox.add(extra_box)
+        parentBox.pack_start(vm_box, True, True, 0)
+        parentBox.pack_start(extra_box, False, True, 0)
         self.add(parentBox)
         
         verh1_box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10)
@@ -208,8 +208,8 @@ class Window(Gtk.Window):
         KeyPadGrid.attach_next_to(button_go,button_rst,Gtk.PositionType.BOTTOM,2,1)
         KeyPadGrid.attach_next_to(button_exe,button_go,Gtk.PositionType.RIGHT,2,1)              
         
-        verh1_box.pack_start(self.entry_addr,True,True,0)
-        verh1_box.pack_start(self.entry_hex,True,True,0)
+        verh1_box.pack_start(self.entry_addr,False,True,0)
+        verh1_box.pack_start(self.entry_hex,False,True,0)
         verh1_box.pack_start(KeyPadGrid,True,True,0)
         vm_box.pack_start(verh1_box,False,True,0)
  
@@ -220,7 +220,7 @@ class Window(Gtk.Window):
         sbuffer = GtkSource.Buffer()
         self.textEditor = GtkSource.View.new_with_buffer(sbuffer) #Gtk.TextView()
         self.textEditor.set_left_margin(20)
-        self.textEditor.override_font(Pango.font_description_from_string("Dejavu Sans Mono 10"))
+        self.textEditor.override_font(Pango.font_description_from_string("Dejavu Sans Mono 11"))
         
         lman = GtkSource.LanguageManager.get_default()
         paths = lman.get_search_path()
@@ -238,7 +238,7 @@ class Window(Gtk.Window):
         loadFileButton.connect('clicked', self.load_file)
         savefilebutton = Gtk.Button("Save File")
         savefilebutton.connect('clicked', self.save_file)
-        exportfilebutton = Gtk.Button("Export opcodes")
+        exportfilebutton = Gtk.Button("Save opcodes")
         exportfilebutton.connect('clicked', self.export_file)
         exportexfilebutton = Gtk.Button("Save asm with opcodes")
         exportexfilebutton.connect('clicked', self.export_ex_file)
@@ -725,8 +725,10 @@ class Window(Gtk.Window):
         fp.close()
          
 
+import platform
 GObject.threads_init()
-Gdk.threads_init()
+if platform.system() == 'Linux':
+    Gdk.threads_init()
 win=Window()
 win.connect("delete-event",Gtk.main_quit)
 win.show_all()
