@@ -33,7 +33,9 @@ RAM holds an array of bytes of size specified (by default 64K). Each byte can be
 ###### PPI
 The 8255 PPI can be addressed as IO or memory using the Bus. The PPI stores 4 bytes in Port-A, Port-B, Port-C and Control Register. The read/write operation (performed by CU through the Bus) are handled according to the control word held in the control register. For Mode-1 and Mode-2 input operations, interrupt function objects can be assigned to the PPI, so that when strobe signal is sent, the interrupt function is called. The actual interrupt functions are implemented in the CU.
 
-TODO: UML
+The relation between above classes is shown in following UML diagram.
+
+![](images/UML.jpeg?raw=true)
 
 Following design patterns were used in designing above elements:
 ###### Signal Line Representation
@@ -74,13 +76,13 @@ TODO: Snapshots
 
 ### Comparision of simulation output and hardware output
 
-1. Review of Assembly Language Programming (Lab 1)
+##### Review of Assembly Language Programming (Lab 1)
 All programs were successfully run in both hardware and simulator and gave exactly same result.
 
-2. Interfacing with 8255 PPI (Lab 2)
-While the 8255 PPI hardware and PPI window GUI of simulator were feature-wise slightly different, the actual output from programs run in both were similar and the simulator can be considered to be good substitute for actual hardware.
+##### Interfacing with 8255 PPI (Lab 2)
+While the 8255 PPI hardware and PPI window of simulator were feature-wise slightly different, the actual output from programs run in both were similar and the simulator can be considered to be good substitute for actual hardware.
 
-3. Data Sorter
+##### Data Sorter
 The final output of data sorter from both hardware and simulator were same. However, the time required by the simulator seems longer in both random generation and data sorting process.
 
 ### Discussion and Analysis
@@ -97,6 +99,6 @@ Final program simulates the behaviour of 8085 and 8255 well in functionality. Ho
 
 ### Conclusion
 
-The software development successfully completed in time. This is probably due to good design and problem planning at the beginning. Chances to learn new programming language and libraries was obtained through this project and we are very glad to participate in it.
+The software development was successfully completed in time. This is probably due to good design and problem planning at the beginning. Chances to learn new programming language and libraries was obtained through this project and we are very glad to participate in it.
 
-This software itself can be considered successful in terms of its functionality. Hopefully, it can help students in learning the programing of 8085 and 8255 hardwares without availability of real hardwares and without abiding in translating assembly programs to machine language.
+This software itself can be considered successful in terms of its functionality. Hopefully, it can help students in learning the programing of 8085 and 8255 hardwares without availability of real hardwares and without spending time in translating assembly programs to machine language.
